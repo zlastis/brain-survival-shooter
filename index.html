@@ -11,64 +11,87 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       font-family: monospace;
       color: #eee;
+      padding: 12px;
     }
     #ui {
       display: flex;
-      gap: 32px;
+      gap: 24px;
       align-items: center;
       margin-bottom: 10px;
-      font-size: 14px;
+      font-size: 13px;
+      flex-wrap: wrap;
     }
-    #hp-bar-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    #hp-bar-wrap { display: flex; align-items: center; gap: 8px; }
     #hp-bar-bg {
-      width: 200px;
-      height: 14px;
-      background: #333;
-      border-radius: 7px;
-      overflow: hidden;
+      width: 180px; height: 14px;
+      background: #333; border-radius: 7px; overflow: hidden;
     }
     #hp-bar {
-      height: 100%;
-      width: 100%;
-      background: #2ecc71;
-      border-radius: 7px;
+      height: 100%; width: 100%;
+      background: #2ecc71; border-radius: 7px;
       transition: width 0.1s, background 0.2s;
     }
-    canvas {
-      border: 1px solid #333;
-      display: block;
-    }
+    #game-wrapper { display: flex; gap: 12px; align-items: flex-start; }
+    canvas { border: 1px solid #333; display: block; }
+
+    /* Canvas overlay (menu / dead only) */
     #overlay {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      pointer-events: none;
-      /* left half of canvas only during prep */
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; pointer-events: none;
+      background: rgba(0,0,0,0.55);
     }
-    #overlay h1 { font-size: 36px; }
-    #overlay p  { font-size: 16px; color: #aaa; }
+    #overlay h1 { font-size: 34px; }
+    #overlay p  { font-size: 15px; color: #aaa; }
     #overlay button {
       pointer-events: all;
-      padding: 10px 28px;
-      font-size: 16px;
-      font-family: monospace;
-      background: #2ecc71;
-      color: #111;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      padding: 10px 28px; font-size: 15px; font-family: monospace;
+      background: #2ecc71; color: #111;
+      border: none; border-radius: 6px; cursor: pointer;
     }
     #overlay button:hover { background: #27ae60; }
+
+    /* Shop panel */
+    #shop {
+      width: 230px; height: 560px;
+      background: #12121f; border: 1px solid #2a2a40;
+      padding: 12px; display: flex; flex-direction: column;
+      gap: 0; overflow-y: auto; font-size: 12px;
+    }
+    #shop-header { margin-bottom: 10px; }
+    #shop-header h2 { font-size: 18px; color: #f1c40f; margin-bottom: 2px; }
+    #shop-header p  { color: #888; font-size: 11px; margin-bottom: 8px; }
+    #shop-start-btn {
+      width: 100%; padding: 8px; font-size: 13px; font-family: monospace;
+      background: #2ecc71; color: #111; border: none;
+      border-radius: 5px; cursor: pointer; font-weight: bold;
+    }
+    #shop-start-btn:hover { background: #27ae60; }
+    .shop-section { border-top: 1px solid #2a2a40; padding-top: 8px; margin-top: 8px; }
+    .shop-section-title {
+      color: #555; font-size: 10px; letter-spacing: 1.2px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .shop-item { margin-bottom: 8px; }
+    .item-name { color: #ddd; margin-bottom: 1px; }
+    .item-name .lvl { color: #f39c12; font-size: 11px; }
+    .item-desc { color: #666; font-size: 10px; margin-bottom: 4px; line-height: 1.4; }
+    .shop-item button {
+      padding: 3px 10px; font-size: 11px; font-family: monospace;
+      background: #1a4a2e; color: #2ecc71;
+      border: 1px solid #2ecc71; border-radius: 3px; cursor: pointer;
+    }
+    .shop-item button:hover:not(:disabled) { background: #2ecc71; color: #111; }
+    .shop-item button:disabled { background: #1a1a2e; color: #444; border-color: #333; cursor: not-allowed; }
+    .shop-item button.active { background: #f39c12; color: #111; border-color: #f39c12; }
+    .color-tower     { color: #2ecc71; }
+    .color-barricade { color: #9b59b6; }
+    .color-sick      { color: #5dade2; }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -82,84 +105,189 @@
   </div>
   <span>Kills: <b id="kill-count">0</b></span>
   <span>Quarter: <b id="quarter-num">1</b></span>
-  <span id="timer-wrap">Time: <b id="countdown">60s</b></span>
+  <span><b id="currency-el" style="color:#f1c40f">100g</b></span>
+  <span id="timer-wrap" class="hidden">Time: <b id="countdown">60s</b></span>
+  <span id="sick-day-wrap" class="hidden" style="color:#5dade2">Sick Days: <b id="sick-day-el">0</b>/3 <span style="color:#444">[Q]</span></span>
 </div>
 
-<div style="position:relative">
-  <canvas id="c" width="800" height="560"></canvas>
-  <div id="overlay">
-    <h1 id="overlay-title">Survival Shooter</h1>
-    <p id="overlay-sub">Survive as long as you can.</p>
-    <p style="font-size:13px;color:#777">WASD / Arrow Keys to move &nbsp;·&nbsp; Auto-aim shoots automatically</p>
-    <button id="start-btn">Start Game</button>
+<div id="game-wrapper">
+  <div style="position:relative">
+    <canvas id="c" width="800" height="560"></canvas>
+    <div id="overlay">
+      <h1 id="overlay-title">Survival Shooter</h1>
+      <p id="overlay-sub">Survive as long as you can.</p>
+      <p id="overlay-hint" style="font-size:12px;color:#666">WASD / Arrow Keys · Auto-aim · Q = Sick Day</p>
+      <button id="start-btn">Start Game</button>
+    </div>
+  </div>
+
+  <!-- Shop panel (shown during prep only) -->
+  <div id="shop" class="hidden">
+    <div id="shop-header">
+      <h2 id="shop-quarter-title">Quarter 1</h2>
+      <p id="shop-quarter-sub">Enemies are gathering. Get ready.</p>
+      <button id="shop-start-btn">Start Quarter 1</button>
+    </div>
+
+    <div class="shop-section">
+      <div class="shop-section-title">Permanent Upgrades</div>
+
+      <div class="shop-item">
+        <div class="item-name">⚡ Fire Rate <span class="lvl" id="level-fireRate">[0/3]</span></div>
+        <div class="item-desc">Shoot faster each level.</div>
+        <button id="buy-fireRate">Buy 80g</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="item-name">❤ Max HP <span class="lvl" id="level-maxHp">[0/3]</span></div>
+        <div class="item-desc">+25 max health per level.</div>
+        <button id="buy-maxHp">Buy 60g</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="item-name">👟 Move Speed <span class="lvl" id="level-moveSpeed">[0/3]</span></div>
+        <div class="item-desc">Move faster each level.</div>
+        <button id="buy-moveSpeed">Buy 70g</button>
+      </div>
+    </div>
+
+    <div class="shop-section">
+      <div class="shop-section-title">Place Defenses — resets each quarter</div>
+
+      <div class="shop-item">
+        <div class="item-name color-tower">■ Staff Designer</div>
+        <div class="item-desc">Shooting tower. Auto-attacks nearest enemy. Click canvas to place.</div>
+        <button id="place-tower">Place 50g</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="item-name color-barricade">■ Design Manager</div>
+        <div class="item-desc">Barricade. Enemies must path around it. Click canvas to place.</div>
+        <button id="place-barricade">Place 40g</button>
+      </div>
+    </div>
+
+    <div class="shop-section">
+      <div class="shop-section-title">Abilities</div>
+
+      <div class="shop-item">
+        <div class="item-name color-sick">😷 Sick Day</div>
+        <div class="item-desc">Freezes all enemies 4s. Press Q during round. Max 3/quarter.</div>
+        <button id="buy-sickday">Buy 30g (0/3)</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 // ─── Canvas & ctx ─────────────────────────────────────────────────────────────
-const canvas  = document.getElementById('c');
-const ctx     = canvas.getContext('2d');
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 // ─── UI refs ──────────────────────────────────────────────────────────────────
-const hpBar        = document.getElementById('hp-bar');
-const hpText       = document.getElementById('hp-text');
-const killCount    = document.getElementById('kill-count');
-const quarterNum   = document.getElementById('quarter-num');
-const timerWrap    = document.getElementById('timer-wrap');
-const countdown    = document.getElementById('countdown');
-const overlay      = document.getElementById('overlay');
-const overlayTitle = document.getElementById('overlay-title');
-const overlaySub   = document.getElementById('overlay-sub');
-const startBtn     = document.getElementById('start-btn');
+const hpBar           = document.getElementById('hp-bar');
+const hpText          = document.getElementById('hp-text');
+const killCount       = document.getElementById('kill-count');
+const quarterNum      = document.getElementById('quarter-num');
+const currencyEl      = document.getElementById('currency-el');
+const timerWrap       = document.getElementById('timer-wrap');
+const countdown       = document.getElementById('countdown');
+const sickDayWrap     = document.getElementById('sick-day-wrap');
+const sickDayEl       = document.getElementById('sick-day-el');
+const overlay         = document.getElementById('overlay');
+const overlayTitle    = document.getElementById('overlay-title');
+const overlaySub      = document.getElementById('overlay-sub');
+const overlayHint     = document.getElementById('overlay-hint');
+const startBtn        = document.getElementById('start-btn');
+const shopEl          = document.getElementById('shop');
+const shopQuarterTitle = document.getElementById('shop-quarter-title');
+const shopQuarterSub  = document.getElementById('shop-quarter-sub');
+const shopStartBtn    = document.getElementById('shop-start-btn');
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const PLAYER_SPEED      = 220;
-const PLAYER_RADIUS     = 14;
-const PLAYER_MAX_HP     = 100;
-const ENEMY_SIZE        = 20;
-const ENEMY_BASE_SPD    = 90;
-const BULLET_SPEED      = 380;
-const BULLET_RADIUS     = 5;
-const SHOOT_INTERVAL    = 0.5;   // seconds
-const CONTACT_DMG       = 20;
-const CONTACT_CD        = 1.0;
+// ─── Base constants ───────────────────────────────────────────────────────────
+const BASE_SPEED         = 220;
+const BASE_MAX_HP        = 100;
+const BASE_SHOOT         = 0.5;
+const PLAYER_RADIUS      = 14;
+const ENEMY_SIZE         = 20;
+const ENEMY_BASE_SPD     = 90;
+const BULLET_SPEED       = 380;
+const BULLET_RADIUS      = 5;
+const CONTACT_DMG        = 20;
+const CONTACT_CD         = 1.0;
 
-const WALL_X            = 580;   // staging zone divider
-const QUARTER_DURATION  = 60;    // seconds per quarter
-const SPAWN_RATE_START  = 2.0;   // spawn interval at t=0
-const SPAWN_RATE_END    = 0.5;   // spawn interval at t=QUARTER_DURATION
-const PREP_SPAWN_INTERVAL = 1.5; // how often enemies trickle into staging during prep
+const WALL_X             = 580;
+const QUARTER_DURATION   = 60;
+const SPAWN_RATE_START   = 2.0;
+const SPAWN_RATE_END     = 0.5;
+const PREP_SPAWN_INT     = 1.5;
+
+// Economy
+const CURRENCY_START     = 100;
+const CURRENCY_PER_KILL  = 10;
+const CURRENCY_Q_BONUS   = 75;
+const UPGRADE_COSTS      = { fireRate: 80, maxHp: 60, moveSpeed: 70 };
+const UPGRADE_MAX        = 3;
+const TOWER_COST         = 50;
+const BARRICADE_COST     = 40;
+const SICK_DAY_COST      = 30;
+const MAX_SICK_DAYS      = 3;
+const SICK_DAY_DURATION  = 4.0;
+
+// ─── Derived stats (read permUpgrades) ───────────────────────────────────────
+function getSpeed()    { return BASE_SPEED + permUpgrades.moveSpeed * 30; }
+function getMaxHp()    { return BASE_MAX_HP + permUpgrades.maxHp * 25; }
+function getShootInt() { return Math.max(0.15, BASE_SHOOT - permUpgrades.fireRate * 0.08); }
 
 // ─── Game state ───────────────────────────────────────────────────────────────
 // states: menu | prep | running | dead
 let state = 'menu';
-let player, enemies, bullets, particles;
-let kills, quarter, quarterTimer, lastEnemy, lastShot;
+let player, enemies, bullets, particles, towers, barricades;
+let kills, currency, quarter, quarterTimer;
+let permUpgrades;
+let sickDaysLeft, frozenTimer;
+let lastEnemy, lastShot;
+let placementMode = null; // null | 'tower' | 'barricade'
+let mouseX = 0, mouseY = 0;
 let keys = {};
 
-// ─── Init / Reset (called once per full game) ─────────────────────────────────
+// ─── Init (full game reset) ───────────────────────────────────────────────────
 function init() {
+  permUpgrades = { fireRate: 0, maxHp: 0, moveSpeed: 0 };
+  currency  = CURRENCY_START;
+  kills     = 0;
+  quarter   = 1;
+  resetField();
+  resetPlayer();
+}
+
+function resetField() {
+  enemies    = [];
+  bullets    = [];
+  particles  = [];
+  towers     = [];
+  barricades = [];
+  sickDaysLeft = 0;
+  frozenTimer  = 0;
+  quarterTimer = QUARTER_DURATION;
+  lastEnemy    = 0;
+  lastShot     = 0;
+  placementMode = null;
+  canvas.style.cursor = 'default';
+}
+
+function resetPlayer() {
   player = {
     x: WALL_X / 2, y: H / 2,
     r: PLAYER_RADIUS,
-    hp: PLAYER_MAX_HP,
+    hp: getMaxHp(),
     contactTimer: 0,
   };
-  enemies   = [];
-  bullets   = [];
-  particles = [];
-  kills     = 0;
-  quarter   = 1;
-  quarterTimer = QUARTER_DURATION;
-  lastEnemy = 0;
-  lastShot  = 0;
-  updateHUD();
 }
 
 // ─── Spawn helpers ────────────────────────────────────────────────────────────
 function spawnInStaging(released) {
-  // Random position in the right staging zone, clear of the wall
   const x = WALL_X + ENEMY_SIZE + 10 + Math.random() * (W - WALL_X - ENEMY_SIZE * 2 - 20);
   const y = ENEMY_SIZE + 10 + Math.random() * (H - ENEMY_SIZE * 2 - 20);
   enemies.push({
@@ -167,59 +295,75 @@ function spawnInStaging(released) {
     size: ENEMY_SIZE,
     speed: ENEMY_BASE_SPD + (quarter - 1) * 15,
     hitTimer: 0,
+    defHitTimer: 0,
     released,
   });
 }
 
-// ─── Shooting ─────────────────────────────────────────────────────────────────
-function fireAtNearest() {
-  // Only target released enemies
-  const targets = enemies.filter(e => e.released);
-  if (!targets.length) return;
-  let nearest = null, bestDist = Infinity;
-  for (const e of targets) {
-    const d = Math.hypot(e.x - player.x, e.y - player.y);
-    if (d < bestDist) { bestDist = d; nearest = e; }
+// ─── Shooting helper ─────────────────────────────────────────────────────────
+function shootAt(fromX, fromY, targets, speed) {
+  if (!targets.length) return null;
+  let nearest = null, best = Infinity;
+  for (const t of targets) {
+    const d = Math.hypot(t.x - fromX, t.y - fromY);
+    if (d < best) { best = d; nearest = t; }
   }
-  if (!nearest) return;
-  const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-  bullets.push({
-    x: player.x, y: player.y,
-    vx: Math.cos(angle) * BULLET_SPEED,
-    vy: Math.sin(angle) * BULLET_SPEED,
-    r: BULLET_RADIUS,
-  });
+  if (!nearest) return null;
+  const a = Math.atan2(nearest.y - fromY, nearest.x - fromX);
+  return { x: fromX, y: fromY, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, r: BULLET_RADIUS };
 }
 
 // ─── Particles ────────────────────────────────────────────────────────────────
 function burst(x, y, color, count = 8) {
   for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const spd   = 60 + Math.random() * 100;
-    particles.push({
-      x, y,
-      vx: Math.cos(angle) * spd,
-      vy: Math.sin(angle) * spd,
-      r: 2 + Math.random() * 3,
-      life: 0.4 + Math.random() * 0.3,
-      maxLife: 0.4 + Math.random() * 0.3,
-      color,
-    });
+    const a = Math.random() * Math.PI * 2;
+    const s = 60 + Math.random() * 100;
+    const life = 0.4 + Math.random() * 0.3;
+    particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, r: 2+Math.random()*3, life, maxLife: life, color });
   }
 }
 
 // ─── Input ────────────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
-  if (state === 'menu' || state === 'dead') {
-    if (e.code === 'Space' || e.code === 'Enter') startGame();
-  }
-  if (state === 'prep') {
-    if (e.code === 'Space' || e.code === 'Enter') startQuarter();
-  }
+  if ((state === 'menu' || state === 'dead') && (e.code === 'Space' || e.code === 'Enter')) startGame();
+  if (state === 'prep' && (e.code === 'Space' || e.code === 'Enter')) startQuarter();
+  if (state === 'running' && e.code === 'KeyQ') activateSickDay();
+  if (e.code === 'Escape' && placementMode) { placementMode = null; canvas.style.cursor = 'default'; updateShop(); }
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+});
+
+canvas.addEventListener('click', e => {
+  if (state !== 'prep' || !placementMode) return;
+  const r = canvas.getBoundingClientRect();
+  const cx = e.clientX - r.left;
+  const cy = e.clientY - r.top;
+  if (cx >= WALL_X - 30 || cx < 10 || cy < 10 || cy > H - 10) return;
+
+  if (placementMode === 'tower' && currency >= TOWER_COST) {
+    currency -= TOWER_COST;
+    towers.push({ x: cx, y: cy, size: 16, hp: 60, maxHp: 60, lastShot: 0 });
+    updateShop(); updateHUD();
+  } else if (placementMode === 'barricade' && currency >= BARRICADE_COST) {
+    currency -= BARRICADE_COST;
+    barricades.push({ x: cx, y: cy, size: 22, hp: 80, maxHp: 80 });
+    updateShop(); updateHUD();
+  }
+});
+
+function activateSickDay() {
+  if (sickDaysLeft <= 0 || frozenTimer > 0) return;
+  sickDaysLeft--;
+  frozenTimer = SICK_DAY_DURATION;
+  updateHUD();
+}
 
 // ─── Game loop ────────────────────────────────────────────────────────────────
 let lastTime = 0;
@@ -227,63 +371,62 @@ function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
-
   if (state === 'prep')    updatePrep(dt, ts);
   if (state === 'running') updateRunning(dt, ts);
   draw();
 }
 
-// ─── Prep update (enemies trickle in, don't move) ────────────────────────────
+// ─── Prep update ─────────────────────────────────────────────────────────────
 function updatePrep(dt, ts) {
-  if (ts - lastEnemy > PREP_SPAWN_INTERVAL * 1000) {
-    spawnInStaging(false);
-    lastEnemy = ts;
-  }
-  // Particles still animate
+  if (ts - lastEnemy > PREP_SPAWN_INT * 1000) { spawnInStaging(false); lastEnemy = ts; }
   tickParticles(dt);
-  updateHUD();
 }
 
 // ─── Running update ───────────────────────────────────────────────────────────
 function updateRunning(dt, ts) {
-  // ── Quarter countdown ──
   quarterTimer -= dt;
-  if (quarterTimer <= 0) {
-    endQuarter();
-    return;
-  }
+  if (quarterTimer <= 0) { endQuarter(); return; }
 
-  // ── Escalating spawn rate ──
-  const progress = 1 - (quarterTimer / QUARTER_DURATION); // 0→1 over the quarter
+  if (frozenTimer > 0) frozenTimer = Math.max(0, frozenTimer - dt);
+  const frozen = frozenTimer > 0;
+
+  // Escalating spawn rate
+  const progress = 1 - (quarterTimer / QUARTER_DURATION);
   const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
-  if (ts - lastEnemy > spawnInterval * 1000) {
-    spawnInStaging(true);
-    lastEnemy = ts;
+  if (ts - lastEnemy > spawnInterval * 1000) { spawnInStaging(true); lastEnemy = ts; }
+
+  // Player auto-shoot
+  if (ts - lastShot > getShootInt() * 1000) {
+    const b = shootAt(player.x, player.y, enemies.filter(e => e.released), BULLET_SPEED);
+    if (b) bullets.push(b);
+    lastShot = ts;
   }
 
-  // ── Auto-shoot ──
-  if (ts - lastShot > SHOOT_INTERVAL * 1000) { fireAtNearest(); lastShot = ts; }
+  // Tower shooting
+  for (const t of towers) {
+    if (ts - t.lastShot > 1200) {
+      const b = shootAt(t.x, t.y, enemies.filter(e => e.released), BULLET_SPEED);
+      if (b) { b.fromTower = true; bullets.push(b); }
+      t.lastShot = ts;
+    }
+  }
 
-  // ── Player movement ──
+  // Player movement
   let dx = 0, dy = 0;
   if (keys['KeyW'] || keys['ArrowUp'])    dy -= 1;
   if (keys['KeyS'] || keys['ArrowDown'])  dy += 1;
   if (keys['KeyA'] || keys['ArrowLeft'])  dx -= 1;
   if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
-  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
-  // Player confined to left zone (can't cross wall)
-  player.x = Math.max(player.r, Math.min(WALL_X - player.r - 2, player.x + dx * PLAYER_SPEED * dt));
-  player.y = Math.max(player.r, Math.min(H - player.r, player.y + dy * PLAYER_SPEED * dt));
+  if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+  player.x = Math.max(player.r, Math.min(WALL_X - player.r - 2, player.x + dx * getSpeed() * dt));
+  player.y = Math.max(player.r, Math.min(H - player.r, player.y + dy * getSpeed() * dt));
   if (player.contactTimer > 0) player.contactTimer -= dt;
 
-  // ── Bullets ──
+  // Bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
-    b.x += b.vx * dt;
-    b.y += b.vy * dt;
-    if (b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
-      bullets.splice(i, 1); continue;
-    }
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.x < -20 || b.x > W+20 || b.y < -20 || b.y > H+20) { bullets.splice(i,1); continue; }
     let hit = false;
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
@@ -291,36 +434,60 @@ function updateRunning(dt, ts) {
       if (Math.abs(b.x - e.x) < e.size && Math.abs(b.y - e.y) < e.size) {
         burst(e.x, e.y, '#e74c3c', 10);
         enemies.splice(j, 1);
-        kills++;
-        hit = true;
-        break;
+        kills++; currency += CURRENCY_PER_KILL;
+        hit = true; updateHUD(); break;
       }
     }
-    if (hit) { bullets.splice(i, 1); }
+    if (hit) { bullets.splice(i,1); }
   }
 
-  // ── Enemy movement & player contact ──
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const e = enemies[i];
-    if (!e.released) continue;
+  // Enemy movement & contacts
+  if (!frozen) {
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      if (!e.released) continue;
+      moveEnemyToPlayer(e, dt);
+      if (e.hitTimer > 0) e.hitTimer -= dt;
+      if (e.defHitTimer > 0) e.defHitTimer -= dt;
 
-    const angle = Math.atan2(player.y - e.y, player.x - e.x);
-    e.x += Math.cos(angle) * e.speed * dt;
-    e.y += Math.sin(angle) * e.speed * dt;
-    if (e.hitTimer > 0) e.hitTimer -= dt;
+      // Player contact
+      if (Math.abs(e.x - player.x) < e.size + player.r - 4 &&
+          Math.abs(e.y - player.y) < e.size + player.r - 4) {
+        if (player.contactTimer <= 0) {
+          player.hp = Math.max(0, player.hp - CONTACT_DMG);
+          player.contactTimer = CONTACT_CD;
+          burst(player.x, player.y, '#e74c3c', 6);
+          enemies.splice(i, 1);
+          updateHUD();
+          if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
+          continue;
+        }
+      }
 
-    // Enemy-player contact
-    if (
-      Math.abs(e.x - player.x) < e.size + player.r - 4 &&
-      Math.abs(e.y - player.y) < e.size + player.r - 4
-    ) {
-      if (player.contactTimer <= 0) {
-        player.hp = Math.max(0, player.hp - CONTACT_DMG);
-        player.contactTimer = CONTACT_CD;
-        burst(player.x, player.y, '#e74c3c', 6);
-        enemies.splice(i, 1);
-        if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
-        continue;
+      // Tower contact
+      for (let j = towers.length - 1; j >= 0; j--) {
+        const t = towers[j];
+        if (Math.abs(e.x - t.x) < e.size + t.size - 4 &&
+            Math.abs(e.y - t.y) < e.size + t.size - 4) {
+          if (e.defHitTimer <= 0) {
+            t.hp -= 20; e.defHitTimer = 0.8;
+            if (t.hp <= 0) { burst(t.x, t.y, '#2ecc71', 12); towers.splice(j, 1); }
+          }
+          break;
+        }
+      }
+
+      // Barricade contact
+      for (let j = barricades.length - 1; j >= 0; j--) {
+        const b = barricades[j];
+        if (Math.abs(e.x - b.x) < e.size + b.size - 4 &&
+            Math.abs(e.y - b.y) < e.size + b.size - 4) {
+          if (e.defHitTimer <= 0) {
+            b.hp -= 15; e.defHitTimer = 0.8;
+            if (b.hp <= 0) { burst(b.x, b.y, '#9b59b6', 12); barricades.splice(j, 1); }
+          }
+          break;
+        }
       }
     }
   }
@@ -329,21 +496,34 @@ function updateRunning(dt, ts) {
   updateHUD();
 }
 
+function moveEnemyToPlayer(e, dt) {
+  const a = Math.atan2(player.y - e.y, player.x - e.x);
+  const nx = e.x + Math.cos(a) * e.speed * dt;
+  const ny = e.y + Math.sin(a) * e.speed * dt;
+
+  const blocked = (tx, ty) => barricades.some(b =>
+    Math.abs(tx - b.x) < e.size + b.size && Math.abs(ty - b.y) < e.size + b.size
+  );
+
+  if (!blocked(nx, ny)) { e.x = nx; e.y = ny; }
+  else {
+    if (!blocked(nx, e.y)) e.x = nx;
+    else if (!blocked(e.x, ny)) e.y = ny;
+  }
+}
+
 function tickParticles(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= dt;
     if (p.life <= 0) { particles.splice(i, 1); continue; }
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.vx *= 0.92;
-    p.vy *= 0.92;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vx *= 0.92; p.vy *= 0.92;
   }
 }
 
 // ─── Draw ─────────────────────────────────────────────────────────────────────
 function draw() {
-  // Background
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, W, H);
 
@@ -351,160 +531,257 @@ function draw() {
   ctx.fillStyle = 'rgba(231,76,60,0.06)';
   ctx.fillRect(WALL_X, 0, W - WALL_X, H);
 
-  // Grid (subtle)
+  // Grid
   ctx.strokeStyle = 'rgba(255,255,255,0.04)';
   ctx.lineWidth = 1;
-  for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-  for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
   // Wall
   ctx.strokeStyle = 'rgba(231,76,60,0.55)';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([12, 8]);
-  ctx.beginPath();
-  ctx.moveTo(WALL_X, 0);
-  ctx.lineTo(WALL_X, H);
-  ctx.stroke();
+  ctx.lineWidth = 3; ctx.setLineDash([12, 8]);
+  ctx.beginPath(); ctx.moveTo(WALL_X, 0); ctx.lineTo(WALL_X, H); ctx.stroke();
   ctx.setLineDash([]);
-
-  // Wall label
   ctx.fillStyle = 'rgba(231,76,60,0.4)';
-  ctx.font = '11px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('STAGING', WALL_X + (W - WALL_X) / 2, 18);
+  ctx.font = '11px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('STAGING', WALL_X + (W - WALL_X) / 2, 16);
   ctx.textAlign = 'left';
+
+  // Barricades
+  for (const b of barricades) {
+    ctx.fillStyle = '#9b59b6'; ctx.shadowColor = '#9b59b6'; ctx.shadowBlur = 6;
+    ctx.fillRect(b.x - b.size, b.y - b.size, b.size * 2, b.size * 2);
+    ctx.shadowBlur = 0;
+    drawHpBar(b.x, b.y - b.size - 6, b.size * 2, b.hp, b.maxHp, '#9b59b6');
+  }
+
+  // Towers
+  for (const t of towers) {
+    ctx.fillStyle = '#2ecc71'; ctx.shadowColor = '#2ecc71'; ctx.shadowBlur = 8;
+    ctx.fillRect(t.x - t.size, t.y - t.size, t.size * 2, t.size * 2);
+    ctx.shadowBlur = 0;
+    drawHpBar(t.x, t.y - t.size - 6, t.size * 2, t.hp, t.maxHp, '#2ecc71');
+  }
 
   // Particles
   for (const p of particles) {
-    const alpha = p.life / p.maxLife;
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = p.life / p.maxLife;
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha = 1;
 
   // Enemies
+  const frozen = frozenTimer > 0;
   for (const e of enemies) {
-    ctx.fillStyle = e.released ? '#e74c3c' : '#8b2a2a';
-    ctx.shadowColor = e.released ? '#e74c3c' : '#8b2a2a';
-    ctx.shadowBlur = e.released ? 8 : 4;
+    ctx.fillStyle = (frozen && e.released) ? '#5dade2' : e.released ? '#e74c3c' : '#8b2a2a';
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = e.released ? 8 : 3;
     ctx.fillRect(e.x - e.size, e.y - e.size, e.size * 2, e.size * 2);
     ctx.shadowBlur = 0;
   }
 
   // Bullets
-  ctx.fillStyle = '#f1c40f';
-  ctx.shadowColor = '#f1c40f';
-  ctx.shadowBlur = 10;
+  ctx.fillStyle = '#f1c40f'; ctx.shadowColor = '#f1c40f'; ctx.shadowBlur = 10;
   for (const b of bullets) {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
   }
   ctx.shadowBlur = 0;
 
   // Player
   if (player) {
-    const playerFlash = player.contactTimer > 0;
-    ctx.fillStyle = playerFlash ? '#80b3ff' : '#3498db';
-    ctx.shadowColor = '#3498db';
-    ctx.shadowBlur = 16;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, 3, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = player.contactTimer > 0 ? '#80b3ff' : '#3498db';
+    ctx.shadowColor = '#3498db'; ctx.shadowBlur = 16;
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(player.x, player.y, 3, 0, Math.PI*2); ctx.fill();
   }
   ctx.shadowBlur = 0;
 
-  // Countdown bar (running only) — drawn at bottom of canvas
+  // Frozen overlay
+  if (frozen) {
+    ctx.fillStyle = 'rgba(93,173,226,0.10)';
+    ctx.fillRect(0, 0, WALL_X, H);
+    ctx.fillStyle = 'rgba(93,173,226,0.9)';
+    ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(`❄ FROZEN ${frozenTimer.toFixed(1)}s`, WALL_X / 2, 38);
+    ctx.textAlign = 'left';
+  }
+
+  // Placement ghost (during prep)
+  if (placementMode && state === 'prep') {
+    const valid = mouseX < WALL_X - 30 && mouseX > 10 && mouseY > 10 && mouseY < H - 10;
+    ctx.globalAlpha = 0.5;
+    if (placementMode === 'tower') {
+      ctx.fillStyle = valid ? '#2ecc71' : '#e74c3c';
+      ctx.fillRect(mouseX - 16, mouseY - 16, 32, 32);
+    } else {
+      ctx.fillStyle = valid ? '#9b59b6' : '#e74c3c';
+      ctx.fillRect(mouseX - 22, mouseY - 22, 44, 44);
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(valid ? 'Click to place' : 'Left side only', mouseX, mouseY - 28);
+    ctx.textAlign = 'left';
+  }
+
+  // Quarter timer bar at bottom (running only)
   if (state === 'running') {
     const pct = quarterTimer / QUARTER_DURATION;
-    const barW = WALL_X - 20;
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.fillRect(10, H - 8, barW, 5);
+    const bw = WALL_X - 20;
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fillRect(10, H - 8, bw, 5);
     ctx.fillStyle = pct > 0.4 ? '#2ecc71' : pct > 0.2 ? '#f39c12' : '#e74c3c';
-    ctx.fillRect(10, H - 8, barW * pct, 5);
+    ctx.fillRect(10, H - 8, bw * pct, 5);
   }
+}
+
+function drawHpBar(cx, y, w, hp, maxHp, color) {
+  const x = cx - w / 2;
+  ctx.fillStyle = '#222'; ctx.fillRect(x, y, w, 3);
+  ctx.fillStyle = color;  ctx.fillRect(x, y, w * (hp / maxHp), 3);
 }
 
 // ─── HUD ──────────────────────────────────────────────────────────────────────
 function updateHUD() {
-  const pct = player ? (player.hp / PLAYER_MAX_HP * 100) : 0;
+  const maxHp = getMaxHp();
+  const pct = player ? (player.hp / maxHp * 100) : 0;
   hpBar.style.width = pct + '%';
   hpBar.style.background = pct > 50 ? '#2ecc71' : pct > 25 ? '#f39c12' : '#e74c3c';
   hpText.textContent = player ? Math.ceil(player.hp) : 0;
   killCount.textContent = kills;
   quarterNum.textContent = quarter;
+  currencyEl.textContent = currency + 'g';
 
   if (state === 'running') {
-    timerWrap.style.display = '';
+    timerWrap.classList.remove('hidden');
     countdown.textContent = Math.ceil(quarterTimer) + 's';
+    sickDayWrap.classList.remove('hidden');
+    sickDayEl.textContent = sickDaysLeft;
   } else {
-    timerWrap.style.display = 'none';
+    timerWrap.classList.add('hidden');
+    sickDayWrap.classList.add('hidden');
   }
+}
+
+// ─── Shop ─────────────────────────────────────────────────────────────────────
+function updateShop() {
+  shopQuarterTitle.textContent = `Quarter ${quarter}`;
+  shopQuarterSub.textContent = quarter === 1
+    ? 'Enemies are gathering. Get ready.'
+    : `Quarter ${quarter - 1} cleared! +${CURRENCY_Q_BONUS}g bonus received.`;
+  shopStartBtn.textContent = `Start Quarter ${quarter}`;
+
+  // Permanent upgrades
+  for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
+    const level = permUpgrades[key];
+    const maxed = level >= UPGRADE_MAX;
+    const cost  = UPGRADE_COSTS[key];
+    document.getElementById(`level-${key}`).textContent = `[${level}/${UPGRADE_MAX}]`;
+    const btn = document.getElementById(`buy-${key}`);
+    btn.textContent = maxed ? 'MAX' : `Buy ${cost}g`;
+    btn.disabled    = maxed || currency < cost;
+  }
+
+  // Tower placement
+  const tBtn = document.getElementById('place-tower');
+  if (placementMode === 'tower') {
+    tBtn.textContent = 'Cancel [ESC]'; tBtn.classList.add('active'); tBtn.disabled = false;
+  } else {
+    tBtn.textContent = `Place ${TOWER_COST}g`; tBtn.classList.remove('active');
+    tBtn.disabled = currency < TOWER_COST;
+  }
+
+  // Barricade placement
+  const bBtn = document.getElementById('place-barricade');
+  if (placementMode === 'barricade') {
+    bBtn.textContent = 'Cancel [ESC]'; bBtn.classList.add('active'); bBtn.disabled = false;
+  } else {
+    bBtn.textContent = `Place ${BARRICADE_COST}g`; bBtn.classList.remove('active');
+    bBtn.disabled = currency < BARRICADE_COST;
+  }
+
+  // Sick day
+  const sBtn = document.getElementById('buy-sickday');
+  const full  = sickDaysLeft >= MAX_SICK_DAYS;
+  sBtn.textContent = full ? `Max (${sickDaysLeft}/${MAX_SICK_DAYS})` : `Buy ${SICK_DAY_COST}g (${sickDaysLeft}/${MAX_SICK_DAYS})`;
+  sBtn.disabled    = full || currency < SICK_DAY_COST;
 }
 
 // ─── State transitions ────────────────────────────────────────────────────────
 function startGame() {
   init();
   state = 'prep';
-  showPrepScreen();
-}
-
-function showPrepScreen() {
-  overlay.classList.remove('hidden');
-  overlayTitle.textContent = `Quarter ${quarter}`;
-  overlaySub.textContent = quarter === 1
-    ? 'Enemies are gathering. Get ready.'
-    : `Quarter ${quarter - 1} cleared! Prepare for the next wave.`;
-  startBtn.textContent = `Start Quarter ${quarter}`;
-  startBtn.onclick = startQuarter;
-  timerWrap.style.display = 'none';
+  overlay.classList.add('hidden');
+  shopEl.classList.remove('hidden');
+  updateShop(); updateHUD();
 }
 
 function startQuarter() {
-  // Release all staged enemies
   for (const e of enemies) e.released = true;
   quarterTimer = QUARTER_DURATION;
-  lastEnemy = performance.now();
-  lastShot  = performance.now();
-  state = 'running';
-  overlay.classList.add('hidden');
+  lastEnemy    = performance.now();
+  lastShot     = performance.now();
+  frozenTimer  = 0;
+  state        = 'running';
+  shopEl.classList.add('hidden');
+  placementMode = null; canvas.style.cursor = 'default';
+  updateHUD();
 }
 
 function endQuarter() {
-  // Clear the field
-  enemies   = [];
-  bullets   = [];
-  particles = [];
+  currency += CURRENCY_Q_BONUS;
   quarter++;
+  resetField();
+  if (player) player.hp = getMaxHp(); // restore HP between quarters
   state = 'prep';
-  lastEnemy = 0;
-  showPrepScreen();
+  shopEl.classList.remove('hidden');
+  updateShop(); updateHUD();
 }
 
 function showDeadScreen() {
+  shopEl.classList.add('hidden');
   overlay.classList.remove('hidden');
   overlayTitle.textContent = 'You Died';
-  overlaySub.textContent = `Quarter ${quarter} · ${kills} kills · ${Math.ceil(quarterTimer)}s remaining`;
-  startBtn.textContent = 'Play Again';
-  startBtn.onclick = startGame;
+  overlaySub.textContent   = `Quarter ${quarter} · ${kills} kills`;
+  overlayHint.style.display = 'none';
+  startBtn.textContent     = 'Play Again';
 }
 
-startBtn.addEventListener('click', startGame);
-window.addEventListener('keydown', e => {
-  if (e.code === 'Space' || e.code === 'Enter') {
-    if (state === 'prep') startQuarter();
-  }
+// ─── Shop event wiring ────────────────────────────────────────────────────────
+for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
+  document.getElementById(`buy-${key}`).addEventListener('click', () => {
+    if (permUpgrades[key] >= UPGRADE_MAX || currency < UPGRADE_COSTS[key]) return;
+    currency -= UPGRADE_COSTS[key];
+    permUpgrades[key]++;
+    if (key === 'maxHp' && player) player.hp = Math.min(player.hp + 25, getMaxHp());
+    updateShop(); updateHUD();
+  });
+}
+
+document.getElementById('place-tower').addEventListener('click', () => {
+  placementMode = placementMode === 'tower' ? null : (currency >= TOWER_COST ? 'tower' : null);
+  canvas.style.cursor = placementMode ? 'crosshair' : 'default';
+  updateShop();
 });
 
-// ─── Kick off loop ────────────────────────────────────────────────────────────
+document.getElementById('place-barricade').addEventListener('click', () => {
+  placementMode = placementMode === 'barricade' ? null : (currency >= BARRICADE_COST ? 'barricade' : null);
+  canvas.style.cursor = placementMode ? 'crosshair' : 'default';
+  updateShop();
+});
+
+document.getElementById('buy-sickday').addEventListener('click', () => {
+  if (sickDaysLeft >= MAX_SICK_DAYS || currency < SICK_DAY_COST) return;
+  currency -= SICK_DAY_COST;
+  sickDaysLeft++;
+  updateShop(); updateHUD();
+});
+
+shopStartBtn.addEventListener('click', startQuarter);
+startBtn.addEventListener('click', startGame);
+
+// ─── Kick off ─────────────────────────────────────────────────────────────────
 requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
 </script>
 </body>
