@@ -122,9 +122,8 @@
   </div>
   <span><span class="hud-label">Kills&nbsp;</span><span id="kill-count" class="hud-val">0</span></span>
   <span><span class="hud-label">Quarter&nbsp;</span><span id="quarter-num" class="hud-val">1</span></span>
-  <span><b id="currency-el">100g</b></span>
+  <span><b id="currency-el">100P</b></span>
   <span id="timer-wrap" class="hidden"><span class="hud-label">Time&nbsp;</span><b id="countdown">60s</b></span>
-  <span id="sick-day-wrap" class="hidden" style="color:#7dd3fc">😷 <b id="sick-day-el">0</b>/3 <span style="color:#374151">[Q]</span></span>
 </div>
 
 <div id="game-wrapper">
@@ -133,7 +132,7 @@
     <div id="overlay">
       <h1 id="overlay-title">🧠 Brain Survival</h1>
       <p id="overlay-sub">Survive the corporate onslaught.</p>
-      <p id="overlay-hint" style="font-size:11px;color:#4b5563">WASD · Auto-aim · Q = Sick Day</p>
+      <p id="overlay-hint" style="font-size:11px;color:#4b5563">WASD · Auto-aim</p>
       <button id="start-btn">Start Game</button>
     </div>
   </div>
@@ -149,17 +148,17 @@
       <div class="shop-item">
         <div class="item-name">⚡ Fire Rate <span class="lvl" id="level-fireRate">[0/3]</span></div>
         <div class="item-desc">Shoot faster each level.</div>
-        <button id="buy-fireRate">Buy 80g</button>
+        <button id="buy-fireRate">Buy 80P</button>
       </div>
       <div class="shop-item">
         <div class="item-name">❤ Max HP <span class="lvl" id="level-maxHp">[0/3]</span></div>
         <div class="item-desc">+25 max health per level.</div>
-        <button id="buy-maxHp">Buy 60g</button>
+        <button id="buy-maxHp">Buy 60P</button>
       </div>
       <div class="shop-item">
         <div class="item-name">👟 Move Speed <span class="lvl" id="level-moveSpeed">[0/3]</span></div>
         <div class="item-desc">Move faster each level.</div>
-        <button id="buy-moveSpeed">Buy 70g</button>
+        <button id="buy-moveSpeed">Buy 70P</button>
       </div>
     </div>
 
@@ -168,21 +167,12 @@
       <div class="shop-item">
         <div class="item-name color-tower">● Staff Designer</div>
         <div class="item-desc">Person behind desk. Shoots at enemies. Click canvas to place.</div>
-        <button id="place-tower">Place 50g</button>
+        <button id="place-tower">Place 50P</button>
       </div>
       <div class="shop-item">
         <div class="item-name color-barricade">● Design Manager</div>
         <div class="item-desc">Wider desk, shoots faster, blocks movement. Click canvas to place.</div>
-        <button id="place-barricade">Place 80g</button>
-      </div>
-    </div>
-
-    <div class="shop-section">
-      <div class="shop-section-title">Abilities</div>
-      <div class="shop-item">
-        <div class="item-name color-sick">😷 Sick Day</div>
-        <div class="item-desc">Freezes all enemies 4s. Press Q during round. Max 3/quarter.</div>
-        <button id="buy-sickday">Buy 30g (0/3)</button>
+        <button id="place-barricade">Place 80P</button>
       </div>
     </div>
 
@@ -206,8 +196,6 @@ const quarterNum       = document.getElementById('quarter-num');
 const currencyEl       = document.getElementById('currency-el');
 const timerWrap        = document.getElementById('timer-wrap');
 const countdown        = document.getElementById('countdown');
-const sickDayWrap      = document.getElementById('sick-day-wrap');
-const sickDayEl        = document.getElementById('sick-day-el');
 const overlay          = document.getElementById('overlay');
 const overlayTitle     = document.getElementById('overlay-title');
 const overlaySub       = document.getElementById('overlay-sub');
@@ -241,8 +229,8 @@ const CONTACT_CD        = 1.0;
 
 const WALL_X            = 580;
 const QUARTER_DURATION  = 60;
-const SPAWN_RATE_START  = 2.0;
-const SPAWN_RATE_END    = 0.5;
+const SPAWN_RATE_START  = 1.3;
+const SPAWN_RATE_END    = 0.3;
 const PREP_SPAWN_INT    = 1.5;
 
 const CURRENCY_START    = 100;
@@ -252,9 +240,11 @@ const UPGRADE_COSTS     = { fireRate: 80, maxHp: 60, moveSpeed: 70 };
 const UPGRADE_MAX       = 3;
 const TOWER_COST        = 50;
 const BARRICADE_COST    = 80;
-const SICK_DAY_COST     = 30;
-const MAX_SICK_DAYS     = 3;
+// const SICK_DAY_COST  = 30;
+// const MAX_SICK_DAYS  = 3;
 const SICK_DAY_DURATION = 4.0;
+const SICK_DAY_MAP_LIFETIME = 8.0;   // seconds before it vanishes
+const SICK_DAY_MAP_INTERVAL = 28000; // ms between spawns
 
 // ─── Derived stats ────────────────────────────────────────────────────────────
 function getSpeed() {
@@ -272,11 +262,11 @@ function getShootInt() {
 // ─── Game state ───────────────────────────────────────────────────────────────
 let state = 'menu';
 let player, enemies, bullets, particles, towers, barricades;
-let refillZones, boostItems, activeBoost;
+let refillZones, boostItems, activeBoost, sickDayMapItems;
 let kills, currency, quarter, quarterTimer;
 let permUpgrades;
-let sickDaysLeft, frozenTimer;
-let lastEnemy, lastShot, nextRefillAt, nextBoostAt;
+let frozenTimer;
+let lastEnemy, lastShot, nextRefillAt, nextBoostAt, nextSickDayAt;
 let placementMode = null;
 let mouseX = 0, mouseY = 0;
 let keys = {};
@@ -296,7 +286,9 @@ function resetField() {
   enemies = []; bullets = []; particles = [];
   towers = []; barricades = [];
   refillZones = []; boostItems = []; activeBoost = null;
-  sickDaysLeft = 0; frozenTimer = 0;
+  frozenTimer = 0;
+  sickDayMapItems = [];
+  nextSickDayAt   = 0;
   quarterTimer = QUARTER_DURATION;
   lastEnemy = 0; lastShot = 0;
   nextRefillAt = 0; nextBoostAt = 0;
@@ -336,7 +328,7 @@ function spawnBoostItem() {
   boostItems.push({
     x: 20 + Math.random() * (WALL_X - 40),
     y: 20 + Math.random() * (H - 40),
-    r: 9, type, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+    r: 12, type, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
   });
 }
 
@@ -368,7 +360,6 @@ window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if ((state === 'menu' || state === 'dead') && (e.code === 'Space' || e.code === 'Enter')) startGame();
   if (state === 'prep'    && (e.code === 'Space' || e.code === 'Enter')) startQuarter();
-  if (state === 'running' && e.code === 'KeyQ') activateSickDay();
   if (e.code === 'Escape' && placementMode) { placementMode = null; canvas.style.cursor = 'default'; updateShop(); }
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
 });
@@ -396,8 +387,8 @@ canvas.addEventListener('click', e => {
 });
 
 function activateSickDay() {
-  if (sickDaysLeft <= 0 || frozenTimer > 0) return;
-  sickDaysLeft--; frozenTimer = SICK_DAY_DURATION; updateHUD();
+  if (frozenTimer > 0) return;
+  frozenTimer = SICK_DAY_DURATION;
 }
 
 // ─── Game loop ────────────────────────────────────────────────────────────────
@@ -412,7 +403,6 @@ function loop(ts) {
 }
 
 function updatePrep(dt, ts) {
-  if (ts - lastEnemy > PREP_SPAWN_INT * 1000) { spawnInStaging(false); lastEnemy = ts; }
   tickParticles(dt);
 }
 
@@ -431,6 +421,26 @@ function updateRunning(dt, ts) {
 
   if (ts > nextRefillAt && refillZones.length < REFILL_MAX) { spawnRefillZone(); nextRefillAt = ts + 10000 + Math.random() * 5000; }
   if (ts > nextBoostAt  && boostItems.length  < BOOST_MAX)  { spawnBoostItem();  nextBoostAt  = ts + 15000 + Math.random() * 5000; }
+
+  // Sick Day pickups — spawn on map, vanish if not collected
+  if (ts > nextSickDayAt && sickDayMapItems.length < 1) {
+    sickDayMapItems.push({
+      x: 25 + Math.random() * (WALL_X - 50),
+      y: 25 + Math.random() * (H - 50),
+      r: 13, timeLeft: SICK_DAY_MAP_LIFETIME,
+    });
+    nextSickDayAt = ts + SICK_DAY_MAP_INTERVAL;
+  }
+  for (let i = sickDayMapItems.length - 1; i >= 0; i--) {
+    const sd = sickDayMapItems[i];
+    sd.timeLeft -= dt;
+    if (sd.timeLeft <= 0) { sickDayMapItems.splice(i, 1); continue; }
+    if (Math.hypot(sd.x - player.x, sd.y - player.y) < sd.r + player.r) {
+      activateSickDay();
+      burst(sd.x, sd.y, '#7dd3fc', 12);
+      sickDayMapItems.splice(i, 1);
+    }
+  }
 
   for (let i = boostItems.length - 1; i >= 0; i--) {
     const item = boostItems[i];
@@ -724,10 +734,19 @@ function draw() {
   ctx.fillStyle = '#111827';
   ctx.fillRect(0, 0, W, H);
 
-  // Office tile grid
-  ctx.strokeStyle = 'rgba(99,102,241,0.055)'; ctx.lineWidth = 1;
-  for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // Office floor tiles — alternating subtle checkerboard
+  const TILE = 60;
+  for (let tx = 0; tx < W; tx += TILE) {
+    for (let ty = 0; ty < H; ty += TILE) {
+      const light = ((Math.floor(tx / TILE) + Math.floor(ty / TILE)) % 2 === 0);
+      ctx.fillStyle = light ? 'rgba(255,255,255,0.022)' : 'rgba(0,0,0,0.0)';
+      ctx.fillRect(tx, ty, TILE, TILE);
+    }
+  }
+  // Grout lines
+  ctx.strokeStyle = 'rgba(148,163,184,0.10)'; ctx.lineWidth = 1;
+  for (let x = 0; x <= W; x += TILE) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += TILE) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
   // Player zone desk-lamp warmth
   const lampGrad = ctx.createRadialGradient(WALL_X*0.45, H*0.5, 0, WALL_X*0.45, H*0.5, WALL_X * 0.75);
@@ -776,24 +795,61 @@ function draw() {
     ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic';
   }
 
-  // ── Boost items (spinning diamonds) ──
-  const spin = (drawTime * 0.0009) % (Math.PI * 2);
-  const boostIcons = { gun: '⚡', shield: '🛡', speed: '💨' };
+  // ── Boost items — large, labeled, distinct per type ──
+  const boostIcons  = { gun: '⚡', shield: '🛡', speed: '💨' };
+  const boostShapes = { gun: '#f59e0b', shield: '#38bdf8', speed: '#4ade80' };
   for (const item of boostItems) {
     ctx.save();
     ctx.translate(item.x, item.y);
-    ctx.shadowColor = BOOST_COLORS[item.type]; ctx.shadowBlur = 14;
+    const spin = (drawTime * 0.0007) % (Math.PI * 2);
+    // Outer glow ring
+    ctx.fillStyle = boostShapes[item.type] + '28';
+    ctx.beginPath(); ctx.arc(0, 0, item.r * 2.2, 0, Math.PI * 2); ctx.fill();
+    // Spinning diamond
+    ctx.shadowColor = boostShapes[item.type]; ctx.shadowBlur = 20;
     ctx.rotate(spin);
-    ctx.fillStyle = BOOST_COLORS[item.type];
+    ctx.fillStyle = boostShapes[item.type];
     ctx.beginPath();
-    ctx.moveTo(0, -item.r*1.45); ctx.lineTo(item.r, 0);
-    ctx.lineTo(0, item.r*1.45); ctx.lineTo(-item.r, 0); ctx.closePath(); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.rotate(-spin);
-    ctx.font = `${item.r * 1.25}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.moveTo(0, -item.r * 1.55); ctx.lineTo(item.r * 1.15, 0);
+    ctx.lineTo(0, item.r * 1.55); ctx.lineTo(-item.r * 1.15, 0);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0; ctx.rotate(-spin);
+    // Icon (counter-rotated so always upright)
+    ctx.font = `${item.r * 1.4}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(boostIcons[item.type], 0, 1);
+    // Label below
+    ctx.fillStyle = boostShapes[item.type];
+    ctx.font = `bold 8px Inter,monospace`;
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+    ctx.fillText(BOOST_LABELS[item.type], 0, item.r * 2.4);
     ctx.restore();
     ctx.textBaseline = 'alphabetic';
+  }
+
+  // ── Sick Day map items ──
+  for (const sd of sickDayMapItems) {
+    const pct = sd.timeLeft / SICK_DAY_MAP_LIFETIME;
+    ctx.save();
+    ctx.translate(sd.x, sd.y);
+    ctx.globalAlpha = Math.min(1, pct * 3); // fade in quickly, then stay, fade out at end
+    ctx.shadowColor = '#7dd3fc'; ctx.shadowBlur = 14 * pct;
+    // Pill background
+    ctx.fillStyle = '#0369a1';
+    roundRect(-sd.r, -sd.r * 0.65, sd.r * 2, sd.r * 1.3, sd.r * 0.65);
+    ctx.fill();
+    // Icon
+    ctx.shadowBlur = 0;
+    ctx.font = `${sd.r * 1.15}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('😷', 0, 1);
+    // Timer arc
+    ctx.strokeStyle = 'rgba(125,211,252,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, sd.r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+    ctx.stroke();
+    ctx.restore();
+    ctx.shadowBlur = 0; ctx.textBaseline = 'alphabetic';
   }
 
   // ── Design Managers (barricades) ──
@@ -893,15 +949,12 @@ function updateHUD() {
   hpText.textContent = player ? Math.ceil(player.hp) : 0;
   killCount.textContent = kills;
   quarterNum.textContent = quarter;
-  currencyEl.textContent = currency + 'g';
+  currencyEl.textContent = currency + 'P';
   if (state === 'running') {
     timerWrap.classList.remove('hidden');
     countdown.textContent = Math.ceil(quarterTimer) + 's';
-    sickDayWrap.classList.remove('hidden');
-    sickDayEl.textContent = sickDaysLeft;
   } else {
     timerWrap.classList.add('hidden');
-    sickDayWrap.classList.add('hidden');
   }
 }
 
@@ -910,31 +963,26 @@ function updateShop() {
   shopQuarterTitle.textContent = `Quarter ${quarter}`;
   shopQuarterSub.textContent = quarter === 1
     ? 'Enemies are gathering. Get ready.'
-    : `Quarter ${quarter - 1} cleared! +${CURRENCY_Q_BONUS}g bonus received.`;
+    : `Quarter ${quarter - 1} cleared! +${CURRENCY_Q_BONUS}P bonus received.`;
   shopStartBtn.textContent = `▶  Start Quarter ${quarter}`;
 
   for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
     const level = permUpgrades[key], maxed = level >= UPGRADE_MAX, cost = UPGRADE_COSTS[key];
     document.getElementById(`level-${key}`).textContent = `[${level}/${UPGRADE_MAX}]`;
     const btn = document.getElementById(`buy-${key}`);
-    btn.textContent = maxed ? 'MAX' : `Buy ${cost}g`;
+    btn.textContent = maxed ? 'MAX' : `Buy ${cost}P`;
     btn.disabled = maxed || currency < cost;
   }
 
   const tBtn = document.getElementById('place-tower');
   if (placementMode === 'tower') {
     tBtn.textContent = 'Cancel [ESC]'; tBtn.classList.add('active'); tBtn.disabled = false;
-  } else { tBtn.textContent = `Place ${TOWER_COST}g`; tBtn.classList.remove('active'); tBtn.disabled = currency < TOWER_COST; }
+  } else { tBtn.textContent = `Place ${TOWER_COST}P`; tBtn.classList.remove('active'); tBtn.disabled = currency < TOWER_COST; }
 
   const bBtn = document.getElementById('place-barricade');
   if (placementMode === 'barricade') {
     bBtn.textContent = 'Cancel [ESC]'; bBtn.classList.add('active'); bBtn.disabled = false;
-  } else { bBtn.textContent = `Place ${BARRICADE_COST}g`; bBtn.classList.remove('active'); bBtn.disabled = currency < BARRICADE_COST; }
-
-  const sBtn = document.getElementById('buy-sickday');
-  const full = sickDaysLeft >= MAX_SICK_DAYS;
-  sBtn.textContent = full ? `Max (${sickDaysLeft}/${MAX_SICK_DAYS})` : `Buy ${SICK_DAY_COST}g (${sickDaysLeft}/${MAX_SICK_DAYS})`;
-  sBtn.disabled = full || currency < SICK_DAY_COST;
+  } else { bBtn.textContent = `Place ${BARRICADE_COST}P`; bBtn.classList.remove('active'); bBtn.disabled = currency < BARRICADE_COST; }
 }
 
 // ─── State transitions ────────────────────────────────────────────────────────
@@ -945,12 +993,15 @@ function startGame() {
 }
 
 function startQuarter() {
-  for (const e of enemies) e.released = true;
+  enemies = []; // clear any stale prep enemies
+  const startCount = 3 + (quarter - 1) * 2;
+  for (let i = 0; i < startCount; i++) spawnInStaging(true);
   quarterTimer = QUARTER_DURATION;
   lastEnemy = performance.now(); lastShot = performance.now();
   frozenTimer = 0;
   nextRefillAt = performance.now() + 8000;
   nextBoostAt  = performance.now() + 12000;
+  nextSickDayAt = performance.now() + 20000;
   state = 'running';
   shopEl.classList.add('hidden'); placementMode = null; canvas.style.cursor = 'default';
   updateHUD();
@@ -988,10 +1039,6 @@ document.getElementById('place-tower').addEventListener('click', () => {
 document.getElementById('place-barricade').addEventListener('click', () => {
   placementMode = placementMode === 'barricade' ? null : (currency >= BARRICADE_COST ? 'barricade' : null);
   canvas.style.cursor = placementMode ? 'crosshair' : 'default'; updateShop();
-});
-document.getElementById('buy-sickday').addEventListener('click', () => {
-  if (sickDaysLeft >= MAX_SICK_DAYS || currency < SICK_DAY_COST) return;
-  currency -= SICK_DAY_COST; sickDaysLeft++; updateShop(); updateHUD();
 });
 shopStartBtn.addEventListener('click', startQuarter);
 startBtn.addEventListener('click', startGame);
