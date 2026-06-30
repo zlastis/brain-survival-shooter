@@ -205,6 +205,15 @@ const shopQuarterTitle = document.getElementById('shop-quarter-title');
 const shopQuarterSub  = document.getElementById('shop-quarter-sub');
 const shopStartBtn    = document.getElementById('shop-start-btn');
 
+// ─── Boost / refill constants ────────────────────────────────────────────────
+const BOOST_DURATION   = 10.0;
+const BOOST_COLORS     = { gun: '#f39c12', shield: '#5dade2', speed: '#e67e22' };
+const BOOST_LABELS     = { gun: '⚡ GUN', shield: '🛡 SHIELD', speed: '👟 SPEED' };
+const REFILL_HEAL_RATE = 10;   // HP/sec while standing on zone
+const REFILL_TOTAL     = 40;   // total HP a zone can give
+const REFILL_MAX       = 3;    // max zones on screen
+const BOOST_MAX        = 2;    // max boost items on screen
+
 // ─── Base constants ───────────────────────────────────────────────────────────
 const BASE_SPEED         = 220;
 const BASE_MAX_HP        = 100;
@@ -235,19 +244,28 @@ const SICK_DAY_COST      = 30;
 const MAX_SICK_DAYS      = 3;
 const SICK_DAY_DURATION  = 4.0;
 
-// ─── Derived stats (read permUpgrades) ───────────────────────────────────────
-function getSpeed()    { return BASE_SPEED + permUpgrades.moveSpeed * 30; }
+// ─── Derived stats (read permUpgrades + active boost) ────────────────────────
+function getSpeed()    {
+  let s = BASE_SPEED + permUpgrades.moveSpeed * 30;
+  if (activeBoost && activeBoost.type === 'speed') s *= 1.6;
+  return s;
+}
 function getMaxHp()    { return BASE_MAX_HP + permUpgrades.maxHp * 25; }
-function getShootInt() { return Math.max(0.15, BASE_SHOOT - permUpgrades.fireRate * 0.08); }
+function getShootInt() {
+  let i = Math.max(0.15, BASE_SHOOT - permUpgrades.fireRate * 0.08);
+  if (activeBoost && activeBoost.type === 'gun') i *= 0.4;
+  return i;
+}
 
 // ─── Game state ───────────────────────────────────────────────────────────────
 // states: menu | prep | running | dead
 let state = 'menu';
 let player, enemies, bullets, particles, towers, barricades;
+let refillZones, boostItems, activeBoost;
 let kills, currency, quarter, quarterTimer;
 let permUpgrades;
 let sickDaysLeft, frozenTimer;
-let lastEnemy, lastShot;
+let lastEnemy, lastShot, nextRefillAt, nextBoostAt;
 let placementMode = null; // null | 'tower' | 'barricade'
 let mouseX = 0, mouseY = 0;
 let keys = {};
@@ -263,16 +281,21 @@ function init() {
 }
 
 function resetField() {
-  enemies    = [];
-  bullets    = [];
-  particles  = [];
-  towers     = [];
-  barricades = [];
+  enemies     = [];
+  bullets     = [];
+  particles   = [];
+  towers      = [];
+  barricades  = [];
+  refillZones = [];
+  boostItems  = [];
+  activeBoost = null;
   sickDaysLeft = 0;
   frozenTimer  = 0;
   quarterTimer = QUARTER_DURATION;
   lastEnemy    = 0;
   lastShot     = 0;
+  nextRefillAt = 0;
+  nextBoostAt  = 0;
   placementMode = null;
   canvas.style.cursor = 'default';
 }
@@ -297,6 +320,30 @@ function spawnInStaging(released) {
     hitTimer: 0,
     defHitTimer: 0,
     released,
+  });
+}
+
+// ─── Refill / boost spawning ─────────────────────────────────────────────────
+function spawnRefillZone() {
+  const r = 16;
+  refillZones.push({
+    x: r + 20 + Math.random() * (WALL_X - r * 2 - 40),
+    y: r + 20 + Math.random() * (H - r * 2 - 40),
+    r, healLeft: REFILL_TOTAL, totalHeal: REFILL_TOTAL,
+    healRate: REFILL_HEAL_RATE,
+  });
+}
+
+function spawnBoostItem() {
+  const types = ['gun', 'shield', 'speed'];
+  const type  = types[Math.floor(Math.random() * 3)];
+  const a     = Math.random() * Math.PI * 2;
+  const spd   = 22 + Math.random() * 18;
+  boostItems.push({
+    x: 20 + Math.random() * (WALL_X - 40),
+    y: 20 + Math.random() * (H - 40),
+    r: 9, type,
+    vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
   });
 }
 
@@ -390,6 +437,51 @@ function updateRunning(dt, ts) {
   if (frozenTimer > 0) frozenTimer = Math.max(0, frozenTimer - dt);
   const frozen = frozenTimer > 0;
 
+  // Active boost countdown
+  if (activeBoost) {
+    activeBoost.timer -= dt;
+    if (activeBoost.timer <= 0) activeBoost = null;
+  }
+
+  // Refill zone spawning
+  if (ts > nextRefillAt && refillZones.length < REFILL_MAX) {
+    spawnRefillZone();
+    nextRefillAt = ts + 10000 + Math.random() * 5000;
+  }
+
+  // Boost item spawning
+  if (ts > nextBoostAt && boostItems.length < BOOST_MAX) {
+    spawnBoostItem();
+    nextBoostAt = ts + 15000 + Math.random() * 5000;
+  }
+
+  // Boost items — drift + player pickup
+  for (let i = boostItems.length - 1; i >= 0; i--) {
+    const item = boostItems[i];
+    item.x += item.vx * dt; item.y += item.vy * dt;
+    if (item.x < item.r)          { item.x = item.r;          item.vx =  Math.abs(item.vx); }
+    if (item.x > WALL_X - item.r) { item.x = WALL_X - item.r; item.vx = -Math.abs(item.vx); }
+    if (item.y < item.r)          { item.y = item.r;          item.vy =  Math.abs(item.vy); }
+    if (item.y > H - item.r)      { item.y = H - item.r;      item.vy = -Math.abs(item.vy); }
+    if (Math.hypot(item.x - player.x, item.y - player.y) < item.r + player.r) {
+      activeBoost = { type: item.type, timer: BOOST_DURATION };
+      burst(item.x, item.y, BOOST_COLORS[item.type], 14);
+      boostItems.splice(i, 1);
+    }
+  }
+
+  // Refill zones — heal player on contact
+  for (let i = refillZones.length - 1; i >= 0; i--) {
+    const z = refillZones[i];
+    if (Math.hypot(z.x - player.x, z.y - player.y) < z.r + player.r) {
+      const heal = z.healRate * dt;
+      player.hp = Math.min(getMaxHp(), player.hp + heal);
+      z.healLeft -= heal;
+      if (z.healLeft <= 0) { refillZones.splice(i, 1); continue; }
+      updateHUD();
+    }
+  }
+
   // Escalating spawn rate
   const progress = 1 - (quarterTimer / QUARTER_DURATION);
   const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
@@ -454,6 +546,13 @@ function updateRunning(dt, ts) {
       if (Math.abs(e.x - player.x) < e.size + player.r - 4 &&
           Math.abs(e.y - player.y) < e.size + player.r - 4) {
         if (player.contactTimer <= 0) {
+          if (activeBoost && activeBoost.type === 'shield') {
+            // immune — bounce enemy away, no damage
+            burst(player.x, player.y, '#5dade2', 6);
+            enemies.splice(i, 1);
+            player.contactTimer = CONTACT_CD;
+            continue;
+          }
           player.hp = Math.max(0, player.hp - CONTACT_DMG);
           player.contactTimer = CONTACT_CD;
           burst(player.x, player.y, '#e74c3c', 6);
@@ -547,6 +646,34 @@ function draw() {
   ctx.fillText('STAGING', WALL_X + (W - WALL_X) / 2, 16);
   ctx.textAlign = 'left';
 
+  // Refill zones
+  for (const z of refillZones) {
+    const pct = z.healLeft / z.totalHeal;
+    const r   = 8 + 10 * pct; // shrinks as depleted
+    ctx.globalAlpha = 0.25 + 0.35 * pct;
+    ctx.fillStyle = '#7dcea0';
+    ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.5 + 0.4 * pct;
+    ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(z.x, z.y, r + 5, 0, Math.PI * 2); ctx.stroke();
+    // progress arc (full ring at max, shrinks clockwise)
+    ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 3; ctx.globalAlpha = 0.9;
+    ctx.beginPath(); ctx.arc(z.x, z.y, r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Boost items (diamond = rotated square)
+  for (const item of boostItems) {
+    ctx.fillStyle = BOOST_COLORS[item.type];
+    ctx.shadowColor = BOOST_COLORS[item.type]; ctx.shadowBlur = 12;
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-item.r, -item.r, item.r * 2, item.r * 2);
+    ctx.restore();
+    ctx.shadowBlur = 0;
+  }
+
   // Barricades
   for (const b of barricades) {
     ctx.fillStyle = '#9b59b6'; ctx.shadowColor = '#9b59b6'; ctx.shadowBlur = 6;
@@ -596,6 +723,20 @@ function draw() {
     ctx.beginPath(); ctx.arc(player.x, player.y, 3, 0, Math.PI*2); ctx.fill();
   }
   ctx.shadowBlur = 0;
+
+  // Active boost indicator
+  if (activeBoost && state === 'running') {
+    const color = BOOST_COLORS[activeBoost.type];
+    const label = BOOST_LABELS[activeBoost.type];
+    const bw = 130, bh = 20, bx = 10, by = 22;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = color;
+    ctx.fillRect(bx, by, bw * (activeBoost.timer / BOOST_DURATION), bh);
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 11px monospace'; ctx.textAlign = 'left';
+    ctx.fillText(`${label}  ${activeBoost.timer.toFixed(1)}s`, bx + 6, by + 14);
+  }
 
   // Frozen overlay
   if (frozen) {
@@ -723,6 +864,8 @@ function startQuarter() {
   lastEnemy    = performance.now();
   lastShot     = performance.now();
   frozenTimer  = 0;
+  nextRefillAt = performance.now() + 8000;
+  nextBoostAt  = performance.now() + 12000;
   state        = 'running';
   shopEl.classList.add('hidden');
   placementMode = null; canvas.style.cursor = 'default';
