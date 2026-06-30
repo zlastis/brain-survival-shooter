@@ -53,6 +53,7 @@
       justify-content: center;
       gap: 16px;
       pointer-events: none;
+      /* left half of canvas only during prep */
     }
     #overlay h1 { font-size: 36px; }
     #overlay p  { font-size: 16px; color: #aaa; }
@@ -80,8 +81,8 @@
     <span id="hp-text">100</span>
   </div>
   <span>Kills: <b id="kill-count">0</b></span>
-  <span>Wave: <b id="wave-num">1</b></span>
-  <span>Time: <b id="elapsed">0s</b></span>
+  <span>Quarter: <b id="quarter-num">1</b></span>
+  <span id="timer-wrap">Time: <b id="countdown">60s</b></span>
 </div>
 
 <div style="position:relative">
@@ -101,77 +102,82 @@ const ctx     = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 // ─── UI refs ──────────────────────────────────────────────────────────────────
-const hpBar      = document.getElementById('hp-bar');
-const hpText     = document.getElementById('hp-text');
-const killCount  = document.getElementById('kill-count');
-const waveNum    = document.getElementById('wave-num');
-const elapsed    = document.getElementById('elapsed');
-const overlay    = document.getElementById('overlay');
+const hpBar        = document.getElementById('hp-bar');
+const hpText       = document.getElementById('hp-text');
+const killCount    = document.getElementById('kill-count');
+const quarterNum   = document.getElementById('quarter-num');
+const timerWrap    = document.getElementById('timer-wrap');
+const countdown    = document.getElementById('countdown');
+const overlay      = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlaySub   = document.getElementById('overlay-sub');
-const startBtn   = document.getElementById('start-btn');
-
-// ─── Game state ───────────────────────────────────────────────────────────────
-let state = 'menu'; // menu | running | dead
-let player, enemies, bullets, particles;
-let kills, startTime, lastEnemy, lastShot, lastWave, wave;
-let keys = {};
+const startBtn     = document.getElementById('start-btn');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const PLAYER_SPEED   = 220;  // px/s
-const PLAYER_RADIUS  = 14;
-const PLAYER_MAX_HP  = 100;
-const ENEMY_SIZE     = 20;   // half-side (square drawn -size to +size)
-const ENEMY_BASE_SPD = 90;   // px/s (increases per wave)
-const BULLET_SPEED   = 380;  // px/s
-const BULLET_RADIUS  = 5;
-const SHOOT_INTERVAL = 0.5;  // seconds
-const SPAWN_INTERVAL = 2.0;  // seconds (decreases per wave)
-const CONTACT_DMG    = 20;
-const CONTACT_CD     = 1.0;  // seconds cooldown per enemy after hitting
+const PLAYER_SPEED      = 220;
+const PLAYER_RADIUS     = 14;
+const PLAYER_MAX_HP     = 100;
+const ENEMY_SIZE        = 20;
+const ENEMY_BASE_SPD    = 90;
+const BULLET_SPEED      = 380;
+const BULLET_RADIUS     = 5;
+const SHOOT_INTERVAL    = 0.5;   // seconds
+const CONTACT_DMG       = 20;
+const CONTACT_CD        = 1.0;
 
-// ─── Init / Reset ─────────────────────────────────────────────────────────────
+const WALL_X            = 580;   // staging zone divider
+const QUARTER_DURATION  = 60;    // seconds per quarter
+const SPAWN_RATE_START  = 2.0;   // spawn interval at t=0
+const SPAWN_RATE_END    = 0.5;   // spawn interval at t=QUARTER_DURATION
+const PREP_SPAWN_INTERVAL = 1.5; // how often enemies trickle into staging during prep
+
+// ─── Game state ───────────────────────────────────────────────────────────────
+// states: menu | prep | running | dead
+let state = 'menu';
+let player, enemies, bullets, particles;
+let kills, quarter, quarterTimer, lastEnemy, lastShot;
+let keys = {};
+
+// ─── Init / Reset (called once per full game) ─────────────────────────────────
 function init() {
   player = {
-    x: W / 2, y: H / 2,
+    x: WALL_X / 2, y: H / 2,
     r: PLAYER_RADIUS,
     hp: PLAYER_MAX_HP,
-    contactTimer: 0,  // global contact cooldown (any enemy)
+    contactTimer: 0,
   };
   enemies   = [];
   bullets   = [];
   particles = [];
   kills     = 0;
-  wave      = 1;
-  startTime = performance.now();
+  quarter   = 1;
+  quarterTimer = QUARTER_DURATION;
   lastEnemy = 0;
   lastShot  = 0;
-  lastWave  = startTime;
   updateHUD();
 }
 
-// ─── Spawning ─────────────────────────────────────────────────────────────────
-function spawnEnemy() {
-  const edge = Math.random() * 4 | 0;
-  let x, y;
-  const pad = ENEMY_SIZE + 2;
-  if (edge === 0) { x = Math.random() * W; y = -pad; }
-  else if (edge === 1) { x = W + pad; y = Math.random() * H; }
-  else if (edge === 2) { x = Math.random() * W; y = H + pad; }
-  else { x = -pad; y = Math.random() * H; }
+// ─── Spawn helpers ────────────────────────────────────────────────────────────
+function spawnInStaging(released) {
+  // Random position in the right staging zone, clear of the wall
+  const x = WALL_X + ENEMY_SIZE + 10 + Math.random() * (W - WALL_X - ENEMY_SIZE * 2 - 20);
+  const y = ENEMY_SIZE + 10 + Math.random() * (H - ENEMY_SIZE * 2 - 20);
   enemies.push({
     x, y,
     size: ENEMY_SIZE,
-    speed: ENEMY_BASE_SPD + (wave - 1) * 12,
-    hitTimer: 0,   // individual hit-flash timer
+    speed: ENEMY_BASE_SPD + (quarter - 1) * 15,
+    hitTimer: 0,
+    released,
   });
 }
 
 // ─── Shooting ─────────────────────────────────────────────────────────────────
 function fireAtNearest() {
-  if (!enemies.length) return;
+  // Only target released enemies
+  const targets = enemies.filter(e => e.released);
+  if (!targets.length) return;
   let nearest = null, bestDist = Infinity;
-  for (const e of enemies) {
+  for (const e of targets) {
     const d = Math.hypot(e.x - player.x, e.y - player.y);
     if (d < bestDist) { bestDist = d; nearest = e; }
   }
@@ -208,7 +214,9 @@ window.addEventListener('keydown', e => {
   if (state === 'menu' || state === 'dead') {
     if (e.code === 'Space' || e.code === 'Enter') startGame();
   }
-  // Prevent arrow-key page scroll
+  if (state === 'prep') {
+    if (e.code === 'Space' || e.code === 'Enter') startQuarter();
+  }
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -220,19 +228,38 @@ function loop(ts) {
   const dt = Math.min((ts - lastTime) / 1000, 0.05);
   lastTime = ts;
 
-  if (state === 'running') update(dt, ts);
-  draw(ts);
+  if (state === 'prep')    updatePrep(dt, ts);
+  if (state === 'running') updateRunning(dt, ts);
+  draw();
 }
 
-function update(dt, ts) {
-  const sec = (ts - startTime) / 1000;
+// ─── Prep update (enemies trickle in, don't move) ────────────────────────────
+function updatePrep(dt, ts) {
+  if (ts - lastEnemy > PREP_SPAWN_INTERVAL * 1000) {
+    spawnInStaging(false);
+    lastEnemy = ts;
+  }
+  // Particles still animate
+  tickParticles(dt);
+  updateHUD();
+}
 
-  // ── Wave progression ──
-  if (ts - lastWave > 20000) { wave++; lastWave = ts; }
+// ─── Running update ───────────────────────────────────────────────────────────
+function updateRunning(dt, ts) {
+  // ── Quarter countdown ──
+  quarterTimer -= dt;
+  if (quarterTimer <= 0) {
+    endQuarter();
+    return;
+  }
 
-  // ── Enemy spawn ──
-  const spawnInterval = Math.max(0.6, SPAWN_INTERVAL - (wave - 1) * 0.15);
-  if (ts - lastEnemy > spawnInterval * 1000) { spawnEnemy(); lastEnemy = ts; }
+  // ── Escalating spawn rate ──
+  const progress = 1 - (quarterTimer / QUARTER_DURATION); // 0→1 over the quarter
+  const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
+  if (ts - lastEnemy > spawnInterval * 1000) {
+    spawnInStaging(true);
+    lastEnemy = ts;
+  }
 
   // ── Auto-shoot ──
   if (ts - lastShot > SHOOT_INTERVAL * 1000) { fireAtNearest(); lastShot = ts; }
@@ -244,7 +271,8 @@ function update(dt, ts) {
   if (keys['KeyA'] || keys['ArrowLeft'])  dx -= 1;
   if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
   if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
-  player.x = Math.max(player.r, Math.min(W - player.r, player.x + dx * PLAYER_SPEED * dt));
+  // Player confined to left zone (can't cross wall)
+  player.x = Math.max(player.r, Math.min(WALL_X - player.r - 2, player.x + dx * PLAYER_SPEED * dt));
   player.y = Math.max(player.r, Math.min(H - player.r, player.y + dy * PLAYER_SPEED * dt));
   if (player.contactTimer > 0) player.contactTimer -= dt;
 
@@ -256,10 +284,10 @@ function update(dt, ts) {
     if (b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
       bullets.splice(i, 1); continue;
     }
-    // Bullet-enemy collision
     let hit = false;
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
+      if (!e.released) continue;
       if (Math.abs(b.x - e.x) < e.size && Math.abs(b.y - e.y) < e.size) {
         burst(e.x, e.y, '#e74c3c', 10);
         enemies.splice(j, 1);
@@ -274,6 +302,8 @@ function update(dt, ts) {
   // ── Enemy movement & player contact ──
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
+    if (!e.released) continue;
+
     const angle = Math.atan2(player.y - e.y, player.x - e.x);
     e.x += Math.cos(angle) * e.speed * dt;
     e.y += Math.sin(angle) * e.speed * dt;
@@ -289,13 +319,17 @@ function update(dt, ts) {
         player.contactTimer = CONTACT_CD;
         burst(player.x, player.y, '#e74c3c', 6);
         enemies.splice(i, 1);
-        if (player.hp === 0) { state = 'dead'; showDeadScreen(sec); return; }
+        if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
         continue;
       }
     }
   }
 
-  // ── Particles ──
+  tickParticles(dt);
+  updateHUD();
+}
+
+function tickParticles(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.life -= dt;
@@ -305,21 +339,40 @@ function update(dt, ts) {
     p.vx *= 0.92;
     p.vy *= 0.92;
   }
-
-  updateHUD(sec);
 }
 
 // ─── Draw ─────────────────────────────────────────────────────────────────────
-function draw(ts) {
+function draw() {
   // Background
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, W, H);
+
+  // Staging zone tint
+  ctx.fillStyle = 'rgba(231,76,60,0.06)';
+  ctx.fillRect(WALL_X, 0, W - WALL_X, H);
 
   // Grid (subtle)
   ctx.strokeStyle = 'rgba(255,255,255,0.04)';
   ctx.lineWidth = 1;
   for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
   for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Wall
+  ctx.strokeStyle = 'rgba(231,76,60,0.55)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([12, 8]);
+  ctx.beginPath();
+  ctx.moveTo(WALL_X, 0);
+  ctx.lineTo(WALL_X, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Wall label
+  ctx.fillStyle = 'rgba(231,76,60,0.4)';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('STAGING', WALL_X + (W - WALL_X) / 2, 18);
+  ctx.textAlign = 'left';
 
   // Particles
   for (const p of particles) {
@@ -334,10 +387,9 @@ function draw(ts) {
 
   // Enemies
   for (const e of enemies) {
-    const flash = e.hitTimer > 0;
-    ctx.fillStyle = flash ? '#ff8080' : '#e74c3c';
-    ctx.shadowColor = '#e74c3c';
-    ctx.shadowBlur = 8;
+    ctx.fillStyle = e.released ? '#e74c3c' : '#8b2a2a';
+    ctx.shadowColor = e.released ? '#e74c3c' : '#8b2a2a';
+    ctx.shadowBlur = e.released ? 8 : 4;
     ctx.fillRect(e.x - e.size, e.y - e.size, e.size * 2, e.size * 2);
     ctx.shadowBlur = 0;
   }
@@ -354,15 +406,14 @@ function draw(ts) {
   ctx.shadowBlur = 0;
 
   // Player
-  const playerFlash = player && player.contactTimer > 0;
-  ctx.fillStyle = playerFlash ? '#80b3ff' : '#3498db';
-  ctx.shadowColor = '#3498db';
-  ctx.shadowBlur = 16;
   if (player) {
+    const playerFlash = player.contactTimer > 0;
+    ctx.fillStyle = playerFlash ? '#80b3ff' : '#3498db';
+    ctx.shadowColor = '#3498db';
+    ctx.shadowBlur = 16;
     ctx.beginPath();
     ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
     ctx.fill();
-    // Player direction indicator (dot in center)
     ctx.fillStyle = '#fff';
     ctx.shadowBlur = 0;
     ctx.beginPath();
@@ -370,34 +421,88 @@ function draw(ts) {
     ctx.fill();
   }
   ctx.shadowBlur = 0;
+
+  // Countdown bar (running only) — drawn at bottom of canvas
+  if (state === 'running') {
+    const pct = quarterTimer / QUARTER_DURATION;
+    const barW = WALL_X - 20;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(10, H - 8, barW, 5);
+    ctx.fillStyle = pct > 0.4 ? '#2ecc71' : pct > 0.2 ? '#f39c12' : '#e74c3c';
+    ctx.fillRect(10, H - 8, barW * pct, 5);
+  }
 }
 
 // ─── HUD ──────────────────────────────────────────────────────────────────────
-function updateHUD(sec = 0) {
+function updateHUD() {
   const pct = player ? (player.hp / PLAYER_MAX_HP * 100) : 0;
   hpBar.style.width = pct + '%';
   hpBar.style.background = pct > 50 ? '#2ecc71' : pct > 25 ? '#f39c12' : '#e74c3c';
   hpText.textContent = player ? Math.ceil(player.hp) : 0;
   killCount.textContent = kills;
-  waveNum.textContent = wave;
-  elapsed.textContent = Math.floor(sec) + 's';
+  quarterNum.textContent = quarter;
+
+  if (state === 'running') {
+    timerWrap.style.display = '';
+    countdown.textContent = Math.ceil(quarterTimer) + 's';
+  } else {
+    timerWrap.style.display = 'none';
+  }
 }
 
 // ─── State transitions ────────────────────────────────────────────────────────
 function startGame() {
   init();
+  state = 'prep';
+  showPrepScreen();
+}
+
+function showPrepScreen() {
+  overlay.classList.remove('hidden');
+  overlayTitle.textContent = `Quarter ${quarter}`;
+  overlaySub.textContent = quarter === 1
+    ? 'Enemies are gathering. Get ready.'
+    : `Quarter ${quarter - 1} cleared! Prepare for the next wave.`;
+  startBtn.textContent = `Start Quarter ${quarter}`;
+  startBtn.onclick = startQuarter;
+  timerWrap.style.display = 'none';
+}
+
+function startQuarter() {
+  // Release all staged enemies
+  for (const e of enemies) e.released = true;
+  quarterTimer = QUARTER_DURATION;
+  lastEnemy = performance.now();
+  lastShot  = performance.now();
   state = 'running';
   overlay.classList.add('hidden');
 }
 
-function showDeadScreen(sec) {
+function endQuarter() {
+  // Clear the field
+  enemies   = [];
+  bullets   = [];
+  particles = [];
+  quarter++;
+  state = 'prep';
+  lastEnemy = 0;
+  showPrepScreen();
+}
+
+function showDeadScreen() {
   overlay.classList.remove('hidden');
   overlayTitle.textContent = 'You Died';
-  overlaySub.textContent = `Survived ${Math.floor(sec)}s · ${kills} kills · Wave ${wave}`;
+  overlaySub.textContent = `Quarter ${quarter} · ${kills} kills · ${Math.ceil(quarterTimer)}s remaining`;
   startBtn.textContent = 'Play Again';
+  startBtn.onclick = startGame;
 }
 
 startBtn.addEventListener('click', startGame);
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    if (state === 'prep') startQuarter();
+  }
+});
 
 // ─── Kick off loop ────────────────────────────────────────────────────────────
 requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
