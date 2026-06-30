@@ -48,15 +48,15 @@
     }
     @keyframes burnout-pulse { from { opacity: 0.6; } to { opacity: 1; } }
     #mental-bar-bg {
-      width: 160px; height: 6px;
-      background: rgba(255,255,255,0.06);
-      border-radius: 3px; overflow: hidden;
+      width: 160px; height: 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 5px; overflow: hidden;
       border: 1px solid rgba(99,102,241,0.2);
       margin-top: 3px;
     }
     #mental-bar {
       height: 100%; width: 100%;
-      background: #818cf8; border-radius: 3px;
+      background: #818cf8; border-radius: 5px;
       transition: width 0.08s, background 0.2s;
     }
     #mental-label { font-size: 9px; color: #6b7280; letter-spacing: 0.3px; margin-top: 1px; }
@@ -169,14 +169,23 @@
 
 <div id="ui">
   <div id="hp-bar-wrap">
-    <span class="hud-label">HP</span>
-    <div id="hp-bar-outer">
-      <div id="hp-bar-bg"><div id="hp-bar"></div></div>
-      <div id="hp-burnout-marker"></div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="hud-label">HP</span>
+        <div id="hp-bar-outer">
+          <div id="hp-bar-bg"><div id="hp-bar"></div></div>
+          <div id="hp-burnout-marker"></div>
+        </div>
+        <span id="hp-text" class="hud-val">100</span>
+        <span id="burnout-label" class="hidden">BURNOUT</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+        <span class="hud-label">MC</span>
+        <div id="mental-bar-bg"><div id="mental-bar"></div></div>
+      </div>
     </div>
-    <span id="hp-text" class="hud-val">100</span>
-    <span id="burnout-label" class="hidden">BURNOUT</span>
   </div>
+  <span><span class="hud-label">Level&nbsp;</span><span id="ic-level-el">IC1</span></span>
   <span><span class="hud-label">Kills&nbsp;</span><span id="kill-count" class="hud-val">0</span></span>
   <span><span class="hud-label">Quarter&nbsp;</span><span id="quarter-num" class="hud-val">1</span></span>
   <span><b id="currency-el">100P</b></span>
@@ -190,10 +199,11 @@
       <h1 id="overlay-title">🧠 Brain Survival</h1>
       <p id="overlay-sub" style="max-width:340px;text-align:center;line-height:1.5">You are a designer's brain trying to survive the corporate environment.</p>
       <div id="overlay-rules" style="font-size:12px;color:#6b7280;max-width:300px;line-height:1.7;text-align:left">
-        <div>1. Spend your Potential points to build defences before each quarter or boost your capacity.</div>
-        <div>2. Try not to die from boredom.</div>
+        <div>1. Hold <b style="color:#c4b5fd">SPACE</b> to shoot — depletes Mental Capacity. Release to refill.</div>
+        <div>2. Spend Potential points to build defences or boost your capacity before each quarter.</div>
+        <div>3. Try not to die from boredom.</div>
       </div>
-      <p id="overlay-hint" style="font-size:11px;color:#4b5563">WASD · Auto-aim</p>
+      <p id="overlay-hint" style="font-size:11px;color:#4b5563">WASD to move · Hold SPACE to shoot</p>
       <button id="start-btn">Start Game</button>
     </div>
     <div id="quarter-modal" class="hidden" style="position:absolute;inset:0;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(10,10,25,0.82);backdrop-filter:blur(3px)">
@@ -214,8 +224,8 @@
 
     <div class="shop-section shop-section-upgrades">
       <div class="shop-section-header">
-        <div class="shop-section-title">Permanent Upgrades</div>
-        <div class="shop-section-subtitle">Carry over between quarters</div>
+        <div class="shop-section-title">Temporary Boosts</div>
+        <div class="shop-section-subtitle">Resets each quarter</div>
       </div>
       <div class="shop-grid">
         <div class="shop-item">
@@ -262,6 +272,21 @@
       </div>
     </div>
 
+    <div id="shop-section-promo" class="shop-section shop-section-promo hidden">
+      <div class="shop-section-header">
+        <div class="shop-section-title">🏆 Promotion Available</div>
+        <div class="shop-section-subtitle" id="promo-subtitle">IC1 → IC2</div>
+      </div>
+      <div class="shop-grid">
+        <div class="shop-item promo-item" style="grid-column:1/-1">
+          <div class="item-icon">🚀</div>
+          <div class="item-limit" id="promo-cost-text">350P</div>
+          <div class="item-desc-small">Permanently boosts all stats. Your level carries forever.</div>
+          <button id="buy-promo">Get Promoted</button>
+        </div>
+      </div>
+    </div>
+
     <div id="shop-footer">
       <button id="shop-start-btn">Start Quarter 1</button>
     </div>
@@ -296,6 +321,11 @@ const qmTitle          = document.getElementById('qm-title');
 const qmStats          = document.getElementById('qm-stats');
 const qmContinue       = document.getElementById('qm-continue');
 const burnoutLabel     = document.getElementById('burnout-label');
+const mentalBar        = document.getElementById('mental-bar');
+const icLevelEl        = document.getElementById('ic-level-el');
+const promoSection     = document.getElementById('shop-section-promo');
+const promoSubtitle    = document.getElementById('promo-subtitle');
+const promoCostText    = document.getElementById('promo-cost-text');
 
 // ─── Boost / refill constants ─────────────────────────────────────────────────
 const BOOST_DURATION  = 10.0;
@@ -309,7 +339,7 @@ const BOOST_MAX       = 2;
 // ─── Base constants ───────────────────────────────────────────────────────────
 const BASE_SPEED        = 220;
 const BASE_MAX_HP       = 100;
-const BASE_SHOOT        = 0.5;
+const BASE_SHOOT        = 0.28;
 const PLAYER_RADIUS     = 14;
 const ENEMY_SIZE        = 20;
 const ENEMY_BASE_SPD    = 90;
@@ -331,6 +361,14 @@ const UPGRADE_COSTS     = { fireRate: 80, maxHp: 60, moveSpeed: 70 };
 const UPGRADE_MAX       = 3;
 const TOWER_COST        = 50;
 const BARRICADE_COST    = 80;
+
+const MENTAL_MAX    = 100;
+const MENTAL_DRAIN  = 22;   // per second while holding space
+const MENTAL_REFILL = 30;   // per second when space released
+
+const IC_TITLES = ['IC1','IC2','IC3','IC4','IC5','IC6','Staff','Principal','Distinguished','Fellow','Partner'];
+function getIcTitle(lvl) { return lvl <= IC_TITLES.length ? IC_TITLES[lvl - 1] : `L${lvl}`; }
+function getPromoCost(lvl) { return 250 + lvl * 100; } // IC1→IC2 = 350P, IC2→IC3 = 450P …
 // const SICK_DAY_COST  = 30;
 // const MAX_SICK_DAYS  = 3;
 const SICK_DAY_DURATION = 4.0;
@@ -339,16 +377,16 @@ const SICK_DAY_MAP_INTERVAL = 28000; // ms between spawns
 
 // ─── Derived stats ────────────────────────────────────────────────────────────
 function getSpeed() {
-  let s = BASE_SPEED + tempUpgrades.moveSpeed * 30;
+  let s = BASE_SPEED + (icLevel - 1) * 15 + tempUpgrades.moveSpeed * 30;
   if (activeBoost && activeBoost.type === 'speed') s *= 1.6;
   return s;
 }
-function getMaxHp()    { return BASE_MAX_HP + tempUpgrades.maxHp * 25; }
+function getMaxHp() { return BASE_MAX_HP + (icLevel - 1) * 15 + tempUpgrades.maxHp * 25; }
 function isBurnout() { return player && player.hp < getMaxHp() * 0.2; }
 function getShootInt() {
-  let i = Math.max(0.15, BASE_SHOOT - tempUpgrades.fireRate * 0.08);
+  let i = Math.max(0.1, BASE_SHOOT - (icLevel - 1) * 0.04 - tempUpgrades.fireRate * 0.08);
   if (activeBoost && activeBoost.type === 'gun') i *= 0.4;
-  if (isBurnout()) i *= 1.667; // 40% slower shooting below 20% HP
+  if (isBurnout()) i *= 1.667;
   return i;
 }
 
@@ -357,7 +395,7 @@ let state = 'menu';
 let player, enemies, bullets, particles, towers, barricades;
 let refillZones, boostItems, activeBoost, sickDayMapItems;
 let kills, currency, quarter, quarterTimer;
-let tempUpgrades;
+let tempUpgrades, icLevel, mentalCap;
 let frozenTimer;
 let lastEnemy, lastShot, nextRefillAt, nextBoostAt, nextSickDayAt;
 let placementMode = null;
@@ -367,7 +405,7 @@ let drawTime = 0;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
-  tempUpgrades = { fireRate: 0, maxHp: 0, moveSpeed: 0 };
+  icLevel  = 1;
   currency = CURRENCY_START;
   kills    = 0;
   quarter  = 1;
@@ -386,6 +424,8 @@ function resetField() {
   lastEnemy = 0; lastShot = 0;
   nextRefillAt = 0; nextBoostAt = 0;
   placementMode = null; canvas.style.cursor = 'default';
+  tempUpgrades = { fireRate: 0, maxHp: 0, moveSpeed: 0 };
+  mentalCap = MENTAL_MAX;
 }
 
 function resetPlayer() {
@@ -452,9 +492,9 @@ function burst(x, y, color, count = 8) {
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if ((state === 'menu' || state === 'dead') && (e.code === 'Space' || e.code === 'Enter')) startGame();
-  if (state === 'prep'    && (e.code === 'Space' || e.code === 'Enter')) startQuarter();
+  if (state === 'prep' && (e.code === 'Space' || e.code === 'Enter')) startQuarter();
   if (e.code === 'Escape' && placementMode) { placementMode = null; canvas.style.cursor = 'default'; updateShop(); }
-  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -564,10 +604,16 @@ function updateRunning(dt, ts) {
     }
   }
 
-  if (ts - lastShot > getShootInt() * 1000) {
-    const b = shootAt(player.x, player.y, enemies.filter(e => e.released), BULLET_SPEED);
-    if (b) bullets.push(b);
-    lastShot = ts;
+  // Manual shooting — hold Space, drains mental capacity
+  if (keys['Space'] && mentalCap > 0) {
+    mentalCap = Math.max(0, mentalCap - MENTAL_DRAIN * dt);
+    if (ts - lastShot > getShootInt() * 1000) {
+      const b = shootAt(player.x, player.y, enemies.filter(e => e.released), BULLET_SPEED);
+      if (b) bullets.push(b);
+      lastShot = ts;
+    }
+  } else if (!keys['Space']) {
+    mentalCap = Math.min(MENTAL_MAX, mentalCap + MENTAL_REFILL * dt);
   }
 
   for (const t of towers) {
@@ -1168,6 +1214,10 @@ function updateHUD() {
   hpText.textContent = player ? Math.ceil(player.hp) : 0;
   if (isBurnout()) burnoutLabel.classList.remove('hidden');
   else burnoutLabel.classList.add('hidden');
+  const mPct = (mentalCap / MENTAL_MAX) * 100;
+  mentalBar.style.width = mPct + '%';
+  mentalBar.style.background = mPct > 40 ? '#818cf8' : mPct > 15 ? '#f59e0b' : '#ef4444';
+  icLevelEl.textContent = getIcTitle(icLevel);
   killCount.textContent = kills;
   quarterNum.textContent = quarter;
   currencyEl.textContent = currency + 'P';
@@ -1204,6 +1254,20 @@ function updateShop() {
   if (placementMode === 'barricade') {
     bBtn.textContent = 'Cancel [ESC]'; bBtn.classList.add('active'); bBtn.disabled = false;
   } else { bBtn.textContent = `Place ${BARRICADE_COST}P`; bBtn.classList.remove('active'); bBtn.disabled = currency < BARRICADE_COST; }
+
+  // Promotion — available every 4 completed quarters
+  const promoEligible = quarter > 1 && (quarter - 1) % 4 === 0;
+  if (promoEligible) {
+    const cost = getPromoCost(icLevel);
+    promoSection.classList.remove('hidden');
+    promoSubtitle.textContent = `${getIcTitle(icLevel)} → ${getIcTitle(icLevel + 1)}`;
+    promoCostText.textContent = `${cost}P · permanent`;
+    const promoBtn = document.getElementById('buy-promo');
+    promoBtn.textContent = `Promote ${cost}P`;
+    promoBtn.disabled = currency < cost;
+  } else {
+    promoSection.classList.add('hidden');
+  }
 }
 
 // ─── State transitions ────────────────────────────────────────────────────────
@@ -1214,12 +1278,13 @@ function startGame() {
 }
 
 function startQuarter() {
-  enemies = []; // clear any stale prep enemies
+  enemies = [];
   const startCount = 3 + (quarter - 1) * 2;
   for (let i = 0; i < startCount; i++) spawnInStaging(true);
   quarterTimer = QUARTER_DURATION;
   lastEnemy = performance.now(); lastShot = performance.now();
   frozenTimer = 0;
+  mentalCap = MENTAL_MAX;
   nextRefillAt = performance.now() + 8000;
   nextBoostAt  = performance.now() + 12000;
   nextSickDayAt = performance.now() + 20000;
@@ -1274,6 +1339,14 @@ document.getElementById('place-barricade').addEventListener('click', () => {
 shopStartBtn.addEventListener('click', startQuarter);
 startBtn.addEventListener('click', startGame);
 qmContinue.addEventListener('click', continueAfterQuarter);
+document.getElementById('buy-promo').addEventListener('click', () => {
+  const cost = getPromoCost(icLevel);
+  if (currency < cost) return;
+  currency -= cost;
+  icLevel++;
+  if (player) player.hp = Math.min(player.hp + 15, getMaxHp()); // partial HP boost on promotion
+  updateShop(); updateHUD();
+});
 
 // ─── Kick off ─────────────────────────────────────────────────────────────────
 requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
