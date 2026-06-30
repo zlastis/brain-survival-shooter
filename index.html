@@ -155,15 +155,15 @@
       <div class="shop-section-title">Place Defenses — resets each quarter</div>
 
       <div class="shop-item">
-        <div class="item-name color-tower">■ Staff Designer</div>
-        <div class="item-desc">Shooting tower. Auto-attacks nearest enemy. Click canvas to place.</div>
+        <div class="item-name color-tower">● Staff Designer</div>
+        <div class="item-desc">Person behind table. Shoots at enemies. Click canvas to place.</div>
         <button id="place-tower">Place 50g</button>
       </div>
 
       <div class="shop-item">
-        <div class="item-name color-barricade">■ Design Manager</div>
-        <div class="item-desc">Barricade. Enemies must path around it. Click canvas to place.</div>
-        <button id="place-barricade">Place 40g</button>
+        <div class="item-name color-barricade">● Design Manager</div>
+        <div class="item-desc">Person behind wider table. Shoots faster, blocks movement. Click canvas to place.</div>
+        <button id="place-barricade">Place 80g</button>
       </div>
     </div>
 
@@ -239,7 +239,7 @@ const CURRENCY_Q_BONUS   = 75;
 const UPGRADE_COSTS      = { fireRate: 80, maxHp: 60, moveSpeed: 70 };
 const UPGRADE_MAX        = 3;
 const TOWER_COST         = 50;
-const BARRICADE_COST     = 40;
+const BARRICADE_COST     = 80;
 const SICK_DAY_COST      = 30;
 const MAX_SICK_DAYS      = 3;
 const SICK_DAY_DURATION  = 4.0;
@@ -400,7 +400,7 @@ canvas.addEventListener('click', e => {
     updateShop(); updateHUD();
   } else if (placementMode === 'barricade' && currency >= BARRICADE_COST) {
     currency -= BARRICADE_COST;
-    barricades.push({ x: cx, y: cy, size: 22, hp: 80, maxHp: 80 });
+    barricades.push({ x: cx, y: cy, size: 22, hp: 100, maxHp: 100, lastShot: 0 });
     updateShop(); updateHUD();
   }
 });
@@ -494,12 +494,21 @@ function updateRunning(dt, ts) {
     lastShot = ts;
   }
 
-  // Tower shooting
+  // Tower shooting (Staff Designer — 1.2s interval)
   for (const t of towers) {
     if (ts - t.lastShot > 1200) {
       const b = shootAt(t.x, t.y, enemies.filter(e => e.released), BULLET_SPEED);
-      if (b) { b.fromTower = true; bullets.push(b); }
+      if (b) bullets.push(b);
       t.lastShot = ts;
+    }
+  }
+
+  // Barricade shooting (Design Manager — 0.8s interval, faster)
+  for (const b of barricades) {
+    if (ts - b.lastShot > 800) {
+      const bullet = shootAt(b.x, b.y, enemies.filter(e => e.released), BULLET_SPEED);
+      if (bullet) bullets.push(bullet);
+      b.lastShot = ts;
     }
   }
 
@@ -674,20 +683,16 @@ function draw() {
     ctx.shadowBlur = 0;
   }
 
-  // Barricades
+  // Design Managers (purple) — wide table + person dot, also blocks enemies
   for (const b of barricades) {
-    ctx.fillStyle = '#9b59b6'; ctx.shadowColor = '#9b59b6'; ctx.shadowBlur = 6;
-    ctx.fillRect(b.x - b.size, b.y - b.size, b.size * 2, b.size * 2);
-    ctx.shadowBlur = 0;
-    drawHpBar(b.x, b.y - b.size - 6, b.size * 2, b.hp, b.maxHp, '#9b59b6');
+    drawDefender(b.x, b.y, 44, 12, 6, '#9b59b6');
+    drawHpBar(b.x, b.y - 26, 44, b.hp, b.maxHp, '#9b59b6');
   }
 
-  // Towers
+  // Staff Designers (green) — narrower table + person dot
   for (const t of towers) {
-    ctx.fillStyle = '#2ecc71'; ctx.shadowColor = '#2ecc71'; ctx.shadowBlur = 8;
-    ctx.fillRect(t.x - t.size, t.y - t.size, t.size * 2, t.size * 2);
-    ctx.shadowBlur = 0;
-    drawHpBar(t.x, t.y - t.size - 6, t.size * 2, t.hp, t.maxHp, '#2ecc71');
+    drawDefender(t.x, t.y, 30, 9, 5, '#2ecc71');
+    drawHpBar(t.x, t.y - 22, 30, t.hp, t.maxHp, '#2ecc71');
   }
 
   // Particles
@@ -775,6 +780,18 @@ function draw() {
     ctx.fillStyle = pct > 0.4 ? '#2ecc71' : pct > 0.2 ? '#f39c12' : '#e74c3c';
     ctx.fillRect(10, H - 8, bw * pct, 5);
   }
+}
+
+function drawDefender(x, y, tableW, tableH, personR, color) {
+  ctx.shadowColor = color; ctx.shadowBlur = 8;
+  ctx.fillStyle = color;
+  // Table
+  ctx.fillRect(x - tableW / 2, y - tableH / 2, tableW, tableH);
+  // Person dot above table
+  ctx.beginPath();
+  ctx.arc(x, y - tableH / 2 - personR - 2, personR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
 }
 
 function drawHpBar(cx, y, w, hp, maxHp, color) {
