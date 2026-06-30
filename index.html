@@ -23,6 +23,7 @@
       background: #1A1A1A;
       border: 1px solid #2D2D2D;
       border-radius: 10px; padding: 6px 16px;
+      width: 800px; box-sizing: border-box; align-self: flex-start;
     }
     #hp-bar-wrap { display: flex; align-items: center; gap: 8px; }
     #hp-bar-outer { position: relative; width: 160px; height: 10px; }
@@ -136,9 +137,9 @@
       padding: 12px; display: flex; flex-direction: column;
       gap: 0; overflow-y: auto; font-size: 12px;
     }
-    #shop-header { margin-bottom: 6px; }
-    #shop-header h2 { font-size: 17px; font-weight: 700; color: #fbbf24; margin-bottom: 2px; }
-    #shop-header p  { color: #9B9A97; font-size: 11px; }
+    #hud-quarter-info { display: flex; flex-direction: column; gap: 1px; }
+    #hud-quarter-title { font-size: 15px; font-weight: 700; color: #fbbf24; }
+    #hud-quarter-sub   { color: #9B9A97; font-size: 11px; max-width: 180px; line-height: 1.3; }
     #shop-footer { margin-top: auto; padding-top: 10px; }
     #shop-start-btn {
       width: 100%; padding: 9px; font-size: 13px; font-family: inherit; font-weight: 700;
@@ -197,6 +198,10 @@
 <body>
 
 <div id="ui">
+  <div id="hud-quarter-info">
+    <div id="hud-quarter-title">Quarter 1</div>
+    <div id="hud-quarter-sub">Enemies are gathering. Get ready.</div>
+  </div>
   <div id="hp-bar-wrap">
     <div style="display:flex;flex-direction:column;gap:0">
       <div style="display:flex;align-items:center;gap:8px">
@@ -215,7 +220,6 @@
     </div>
   </div>
   <span><span class="hud-label">Level&nbsp;</span><span id="ic-level-el">IC1</span></span>
-  <span><span class="hud-label">Quarter&nbsp;</span><span id="quarter-num" class="hud-val">1</span></span>
   <span><span class="hud-label">Potential&nbsp;</span><b id="currency-el">100P</b></span>
   <span id="timer-wrap" class="hidden"><span class="hud-label">Time&nbsp;</span><b id="countdown">60s</b></span>
 </div>
@@ -253,10 +257,6 @@
   </div>
 
   <div id="shop" class="hidden">
-    <div id="shop-header">
-      <h2 id="shop-quarter-title">Quarter 1</h2>
-      <p id="shop-quarter-sub">Enemies are gathering. Get ready.</p>
-    </div>
 
     <div class="shop-section shop-section-upgrades">
       <div class="shop-section-header">
@@ -298,7 +298,7 @@
         </div>
         <div class="shop-item">
           <div class="item-icon color-barricade">🗂️</div>
-          <div class="item-limit">80P · blocks</div>
+          <div class="item-limit">80P · shoots fast</div>
           <button id="place-barricade">Place 80P</button>
         </div>
       </div>
@@ -340,7 +340,6 @@ const W = canvas.width, H = canvas.height;
 // ─── UI refs ──────────────────────────────────────────────────────────────────
 const hpBar            = document.getElementById('hp-bar');
 const hpText           = document.getElementById('hp-text');
-const quarterNum       = document.getElementById('quarter-num');
 const currencyEl       = document.getElementById('currency-el');
 const timerWrap        = document.getElementById('timer-wrap');
 const countdown        = document.getElementById('countdown');
@@ -350,8 +349,8 @@ const overlaySub       = document.getElementById('overlay-sub');
 const overlayHint      = document.getElementById('overlay-hint');
 const startBtn         = document.getElementById('start-btn');
 const shopEl           = document.getElementById('shop');
-const shopQuarterTitle = document.getElementById('shop-quarter-title');
-const shopQuarterSub   = document.getElementById('shop-quarter-sub');
+const shopQuarterTitle = document.getElementById('hud-quarter-title');
+const shopQuarterSub   = document.getElementById('hud-quarter-sub');
 const shopStartBtn     = document.getElementById('shop-start-btn');
 const startFooter      = document.getElementById('start-footer');
 const quarterModal     = document.getElementById('quarter-modal');
@@ -536,10 +535,13 @@ function burst(x, y, color, count = 8) {
 }
 
 // ─── Input ────────────────────────────────────────────────────────────────────
+let requireSpaceRelease = false;
+
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if ((state === 'menu' || state === 'dead') && (e.code === 'Space' || e.code === 'Enter')) startGame();
   if (state === 'prep' && (e.code === 'Space' || e.code === 'Enter')) {
+    if (requireSpaceRelease) return;
     if (!quarterModal.classList.contains('hidden')) continueAfterQuarter();
     else startQuarter();
   }
@@ -550,7 +552,10 @@ window.addEventListener('keydown', e => {
   }
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Escape'].includes(e.code)) e.preventDefault();
 });
-window.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('keyup', e => {
+  keys[e.code] = false;
+  if (e.code === 'Space') requireSpaceRelease = false;
+});
 
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect();
@@ -684,7 +689,7 @@ function updateRunning(dt, ts) {
   }
 
   for (const b of barricades) {
-    if (ts - b.lastShot > 800) {
+    if (ts - b.lastShot > 600) {
       const bullet = shootAt(b.x, b.y, enemies.filter(e => e.released), BULLET_SPEED);
       if (bullet) bullets.push(bullet);
       b.lastShot = ts;
@@ -779,7 +784,6 @@ function moveEnemyToPlayer(e, dt) {
   const nx = e.x + Math.cos(a) * e.speed * dt;
   const ny = e.y + Math.sin(a) * e.speed * dt;
   const blocked = (tx, ty) =>
-    barricades.some(b => Math.abs(tx - b.x) < e.size + b.size && Math.abs(ty - b.y) < e.size + b.size) ||
     MAP_OBSTACLES.filter(o => o.x < WALL_X).some(o => Math.abs(tx - o.x) < e.size + o.w / 2 && Math.abs(ty - o.y) < e.size + o.h / 2);
   if (!blocked(nx, ny)) { e.x = nx; e.y = ny; }
   else {
@@ -1365,7 +1369,6 @@ function updateHUD() {
   mentalBar.style.width = mPct + '%';
   mentalBar.style.background = mPct > 40 ? '#818cf8' : mPct > 15 ? '#f59e0b' : '#ef4444';
   icLevelEl.textContent = getIcTitle(icLevel);
-  quarterNum.textContent = quarter;
   currencyEl.textContent = currency + 'P';
   if (state === 'running') {
     timerWrap.classList.remove('hidden');
@@ -1461,6 +1464,7 @@ function startQuarter() {
 
 function endQuarter() {
   state = 'prep';
+  requireSpaceRelease = true;
   enemies = []; bullets = []; // clear immediately so no last-frame damage
   if (player) player.contactTimer = CONTACT_CD; // block any pending contact hit
   qmTitle.textContent = `Quarter ${quarter} Complete! 🎉`;
