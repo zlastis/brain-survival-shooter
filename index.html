@@ -25,8 +25,9 @@
       border-radius: 10px; padding: 6px 16px;
     }
     #hp-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    #hp-bar-outer { position: relative; width: 160px; height: 10px; }
     #hp-bar-bg {
-      width: 160px; height: 10px;
+      width: 100%; height: 100%;
       background: rgba(255,255,255,0.08);
       border-radius: 5px; overflow: hidden;
       border: 1px solid rgba(255,255,255,0.1);
@@ -36,6 +37,38 @@
       background: #34d399; border-radius: 5px;
       transition: width 0.1s, background 0.2s;
     }
+    #hp-burnout-marker {
+      position: absolute; left: 20%; top: -2px; bottom: -2px;
+      width: 2px; background: #ef4444; border-radius: 1px; opacity: 0.85;
+      pointer-events: none;
+    }
+    #burnout-label {
+      font-size: 9px; color: #ef4444; font-weight: 700; letter-spacing: 0.5px;
+      animation: burnout-pulse 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes burnout-pulse { from { opacity: 0.6; } to { opacity: 1; } }
+    #mental-bar-bg {
+      width: 160px; height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px; overflow: hidden;
+      border: 1px solid rgba(99,102,241,0.2);
+      margin-top: 3px;
+    }
+    #mental-bar {
+      height: 100%; width: 100%;
+      background: #818cf8; border-radius: 3px;
+      transition: width 0.08s, background 0.2s;
+    }
+    #mental-label { font-size: 9px; color: #6b7280; letter-spacing: 0.3px; margin-top: 1px; }
+    .shop-section-promo {
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.3);
+    }
+    .shop-section-promo .shop-section-title { color: #fbbf24; }
+    .promo-item { border-color: rgba(251,191,36,0.2) !important; }
+    .promo-item button { color: #fbbf24 !important; border-color: rgba(251,191,36,0.4) !important; background: rgba(251,191,36,0.08) !important; }
+    .promo-item button:hover:not(:disabled) { background: #f59e0b !important; color: #111 !important; border-color: #f59e0b !important; }
+    #ic-level-el { color: #fbbf24; font-weight: 700; font-size: 13px; }
     .hud-label { color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
     .hud-val   { font-weight: 700; font-size: 13px; }
     #currency-el { color: #fbbf24; font-weight: 700; }
@@ -87,20 +120,40 @@
     }
     #shop-start-btn:hover { background: #4f46e5; }
 
-    .shop-section { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; margin-top: 8px; }
-    .shop-section-title {
-      color: #4b5563; font-size: 9px; letter-spacing: 1.5px;
-      text-transform: uppercase; margin-bottom: 7px; font-weight: 600;
+    /* ── Shop sections ── */
+    .shop-section { border-radius: 8px; padding: 9px 8px 8px; margin-top: 8px; }
+    .shop-section-upgrades {
+      background: rgba(99,102,241,0.07);
+      border: 1px solid rgba(99,102,241,0.22);
     }
-    .shop-item { margin-bottom: 9px; }
-    .item-name { color: #e2e8f0; margin-bottom: 1px; font-weight: 600; font-size: 12px; }
-    .item-name .lvl { color: #f59e0b; font-size: 10px; font-weight: 400; }
-    .item-desc { color: #4b5563; font-size: 10px; margin-bottom: 4px; line-height: 1.4; }
+    .shop-section-defenses {
+      background: rgba(167,139,250,0.06);
+      border: 1px solid rgba(167,139,250,0.22);
+    }
+    .shop-section-header { margin-bottom: 8px; }
+    .shop-section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .shop-section-upgrades .shop-section-title { color: #818cf8; }
+    .shop-section-defenses .shop-section-title { color: #c4b5fd; }
+    .shop-section-subtitle { color: #4b5563; font-size: 9px; margin-top: 1px; }
+
+    /* ── Item grid ── */
+    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .shop-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 7px; padding: 7px 5px 6px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+    }
+    .item-icon { font-size: 20px; line-height: 1; }
+    .item-limit { font-size: 9px; color: #9ca3af; font-weight: 600; }
+    .item-desc-small { color: #4b5563; font-size: 9px; line-height: 1.3; }
     .shop-item button {
-      padding: 3px 10px; font-size: 10px; font-family: inherit; font-weight: 600;
+      width: 100%; padding: 4px 0; font-size: 9px; font-family: inherit; font-weight: 700;
       background: rgba(99,102,241,0.12); color: #818cf8;
       border: 1px solid rgba(99,102,241,0.35); border-radius: 5px; cursor: pointer;
-      transition: background 0.12s;
+      transition: background 0.12s; margin-top: auto;
     }
     .shop-item button:hover:not(:disabled) { background: #6366f1; color: #fff; border-color: #6366f1; }
     .shop-item button:disabled { background: rgba(255,255,255,0.03); color: #374151; border-color: #1f2937; cursor: not-allowed; }
@@ -117,8 +170,12 @@
 <div id="ui">
   <div id="hp-bar-wrap">
     <span class="hud-label">HP</span>
-    <div id="hp-bar-bg"><div id="hp-bar"></div></div>
+    <div id="hp-bar-outer">
+      <div id="hp-bar-bg"><div id="hp-bar"></div></div>
+      <div id="hp-burnout-marker"></div>
+    </div>
     <span id="hp-text" class="hud-val">100</span>
+    <span id="burnout-label" class="hidden">BURNOUT</span>
   </div>
   <span><span class="hud-label">Kills&nbsp;</span><span id="kill-count" class="hud-val">0</span></span>
   <span><span class="hud-label">Quarter&nbsp;</span><span id="quarter-num" class="hud-val">1</span></span>
@@ -131,9 +188,21 @@
     <canvas id="c" width="800" height="560"></canvas>
     <div id="overlay">
       <h1 id="overlay-title">🧠 Brain Survival</h1>
-      <p id="overlay-sub">Survive the corporate onslaught.</p>
+      <p id="overlay-sub" style="max-width:340px;text-align:center;line-height:1.5">You are a designer's brain trying to survive the corporate environment.</p>
+      <div id="overlay-rules" style="font-size:12px;color:#6b7280;max-width:300px;line-height:1.7;text-align:left">
+        <div>1. Spend your Potential points to build defences before each quarter or boost your capacity.</div>
+        <div>2. Try not to die from boredom.</div>
+      </div>
       <p id="overlay-hint" style="font-size:11px;color:#4b5563">WASD · Auto-aim</p>
       <button id="start-btn">Start Game</button>
+    </div>
+    <div id="quarter-modal" class="hidden" style="position:absolute;inset:0;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(10,10,25,0.82);backdrop-filter:blur(3px)">
+      <div style="background:#16162a;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:28px 36px;text-align:center;max-width:280px">
+        <div id="qm-emoji" style="font-size:40px;margin-bottom:8px">🎉</div>
+        <h2 id="qm-title" style="font-size:20px;font-weight:700;color:#fbbf24;margin-bottom:6px">Quarter 1 Complete!</h2>
+        <p id="qm-stats" style="font-size:13px;color:#9ca3af;margin-bottom:18px">+75P bonus earned</p>
+        <button id="qm-continue" style="padding:10px 32px;font-size:14px;font-family:inherit;font-weight:700;background:#6366f1;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 0 20px rgba(99,102,241,0.4);transition:background 0.15s">Continue →</button>
+      </div>
     </div>
   </div>
 
@@ -143,36 +212,53 @@
       <p id="shop-quarter-sub">Enemies are gathering. Get ready.</p>
     </div>
 
-    <div class="shop-section">
-      <div class="shop-section-title">Permanent Upgrades</div>
-      <div class="shop-item">
-        <div class="item-name">⚡ Fire Rate <span class="lvl" id="level-fireRate">[0/3]</span></div>
-        <div class="item-desc">Shoot faster each level.</div>
-        <button id="buy-fireRate">Buy 80P</button>
+    <div class="shop-section shop-section-upgrades">
+      <div class="shop-section-header">
+        <div class="shop-section-title">Permanent Upgrades</div>
+        <div class="shop-section-subtitle">Carry over between quarters</div>
       </div>
-      <div class="shop-item">
-        <div class="item-name">❤ Max HP <span class="lvl" id="level-maxHp">[0/3]</span></div>
-        <div class="item-desc">+25 max health per level.</div>
-        <button id="buy-maxHp">Buy 60P</button>
-      </div>
-      <div class="shop-item">
-        <div class="item-name">👟 Move Speed <span class="lvl" id="level-moveSpeed">[0/3]</span></div>
-        <div class="item-desc">Move faster each level.</div>
-        <button id="buy-moveSpeed">Buy 70P</button>
+      <div class="shop-grid">
+        <div class="shop-item">
+          <div class="item-icon">⚡</div>
+          <div class="item-limit" id="level-fireRate">[0/3]</div>
+          <div class="item-desc-small">Shoot faster each level.</div>
+          <button id="buy-fireRate">Buy 80P</button>
+        </div>
+        <div class="shop-item">
+          <div class="item-icon">❤️</div>
+          <div class="item-limit" id="level-maxHp">[0/3]</div>
+          <div class="item-desc-small">+25 max health per level.</div>
+          <button id="buy-maxHp">Buy 60P</button>
+        </div>
+        <div class="shop-item">
+          <div class="item-icon">👟</div>
+          <div class="item-limit" id="level-moveSpeed">[0/3]</div>
+          <div class="item-desc-small">Move faster each level.</div>
+          <button id="buy-moveSpeed">Buy 70P</button>
+        </div>
       </div>
     </div>
 
-    <div class="shop-section">
-      <div class="shop-section-title">Place Defenses — resets each quarter</div>
-      <div class="shop-item">
-        <div class="item-name color-tower">● Staff Designer</div>
-        <div class="item-desc">Person behind desk. Shoots at enemies. Click canvas to place.</div>
-        <button id="place-tower">Place 50P</button>
+    <div class="shop-section shop-section-defenses">
+      <div class="shop-section-header">
+        <div class="shop-section-title">Place Defenses</div>
+        <div class="shop-section-subtitle">Resets each quarter</div>
       </div>
-      <div class="shop-item">
-        <div class="item-name color-barricade">● Design Manager</div>
-        <div class="item-desc">Wider desk, shoots faster, blocks movement. Click canvas to place.</div>
-        <button id="place-barricade">Place 80P</button>
+      <div class="shop-grid">
+        <div class="shop-item">
+          <div class="item-icon color-tower">👤</div>
+          <div class="item-limit">50P · shoots</div>
+          <button id="place-tower">Place 50P</button>
+        </div>
+        <div class="shop-item">
+          <div class="item-icon color-barricade">🗂️</div>
+          <div class="item-limit">80P · blocks</div>
+          <button id="place-barricade">Place 80P</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:5px;font-size:9px;color:#6b7280;text-align:center">
+        <span style="flex:1">Staff Designer</span>
+        <span style="flex:1">Design Manager</span>
       </div>
     </div>
 
@@ -205,6 +291,11 @@ const shopEl           = document.getElementById('shop');
 const shopQuarterTitle = document.getElementById('shop-quarter-title');
 const shopQuarterSub   = document.getElementById('shop-quarter-sub');
 const shopStartBtn     = document.getElementById('shop-start-btn');
+const quarterModal     = document.getElementById('quarter-modal');
+const qmTitle          = document.getElementById('qm-title');
+const qmStats          = document.getElementById('qm-stats');
+const qmContinue       = document.getElementById('qm-continue');
+const burnoutLabel     = document.getElementById('burnout-label');
 
 // ─── Boost / refill constants ─────────────────────────────────────────────────
 const BOOST_DURATION  = 10.0;
@@ -229,8 +320,8 @@ const CONTACT_CD        = 1.0;
 
 const WALL_X            = 580;
 const QUARTER_DURATION  = 60;
-const SPAWN_RATE_START  = 1.3;
-const SPAWN_RATE_END    = 0.3;
+const SPAWN_RATE_START  = 0.87;
+const SPAWN_RATE_END    = 0.2;
 const PREP_SPAWN_INT    = 1.5;
 
 const CURRENCY_START    = 100;
@@ -248,14 +339,16 @@ const SICK_DAY_MAP_INTERVAL = 28000; // ms between spawns
 
 // ─── Derived stats ────────────────────────────────────────────────────────────
 function getSpeed() {
-  let s = BASE_SPEED + permUpgrades.moveSpeed * 30;
+  let s = BASE_SPEED + tempUpgrades.moveSpeed * 30;
   if (activeBoost && activeBoost.type === 'speed') s *= 1.6;
   return s;
 }
-function getMaxHp()    { return BASE_MAX_HP + permUpgrades.maxHp * 25; }
+function getMaxHp()    { return BASE_MAX_HP + tempUpgrades.maxHp * 25; }
+function isBurnout() { return player && player.hp < getMaxHp() * 0.2; }
 function getShootInt() {
-  let i = Math.max(0.15, BASE_SHOOT - permUpgrades.fireRate * 0.08);
+  let i = Math.max(0.15, BASE_SHOOT - tempUpgrades.fireRate * 0.08);
   if (activeBoost && activeBoost.type === 'gun') i *= 0.4;
+  if (isBurnout()) i *= 1.667; // 40% slower shooting below 20% HP
   return i;
 }
 
@@ -264,7 +357,7 @@ let state = 'menu';
 let player, enemies, bullets, particles, towers, barricades;
 let refillZones, boostItems, activeBoost, sickDayMapItems;
 let kills, currency, quarter, quarterTimer;
-let permUpgrades;
+let tempUpgrades;
 let frozenTimer;
 let lastEnemy, lastShot, nextRefillAt, nextBoostAt, nextSickDayAt;
 let placementMode = null;
@@ -274,7 +367,7 @@ let drawTime = 0;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
-  permUpgrades = { fireRate: 0, maxHp: 0, moveSpeed: 0 };
+  tempUpgrades = { fireRate: 0, maxHp: 0, moveSpeed: 0 };
   currency = CURRENCY_START;
   kills    = 0;
   quarter  = 1;
@@ -419,7 +512,11 @@ function updateRunning(dt, ts) {
   const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
   if (ts - lastEnemy > spawnInterval * 1000) { spawnInStaging(true); lastEnemy = ts; }
 
-  if (ts > nextRefillAt && refillZones.length < REFILL_MAX) { spawnRefillZone(); nextRefillAt = ts + 10000 + Math.random() * 5000; }
+  if (ts > nextRefillAt && refillZones.length < REFILL_MAX && player && player.hp < getMaxHp() * 0.5) {
+    spawnRefillZone(); nextRefillAt = ts + 10000 + Math.random() * 5000;
+  } else if (ts > nextRefillAt) {
+    nextRefillAt = ts + 3000; // re-check every 3s when HP is not low enough
+  }
   if (ts > nextBoostAt  && boostItems.length  < BOOST_MAX)  { spawnBoostItem();  nextBoostAt  = ts + 15000 + Math.random() * 5000; }
 
   // Sick Day pickups — spawn on map, vanish if not collected
@@ -654,48 +751,88 @@ function drawEnemy(e, frozen) {
   ctx.translate(e.x, e.y);
   const s = e.size;
   const w = s * 1.9, h = s * 1.5;
-  const clr = frozen ? '#38bdf8' : '#ef4444';
-  ctx.shadowColor = clr; ctx.shadowBlur = 7;
+  const ice = frozen;
+  ctx.shadowColor = ice ? '#38bdf8' : '#ef4444'; ctx.shadowBlur = 8;
 
-  if (e.variant === 1) {
-    // Slack message bubble
-    ctx.fillStyle = frozen ? '#164e63' : '#4a154b';
-    roundRect(-w/2, -h/2, w, h, 5); ctx.fill();
-    // Bubble tail
-    ctx.beginPath(); ctx.moveTo(-s*0.35, h/2); ctx.lineTo(-s*0.65, h/2+s*0.28); ctx.lineTo(-s*0.05, h/2); ctx.fill();
-    ctx.fillStyle = clr; ctx.font = `bold ${s*0.85}px monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('#', 0, 0);
-  } else if (e.variant === 2) {
-    // Calendar / planning doc
-    ctx.fillStyle = frozen ? '#1e3a5f' : '#1e3a8a';
-    roundRect(-w/2, -h/2, w, h, 4); ctx.fill();
-    ctx.fillStyle = clr;
-    ctx.fillRect(-w/2, -h/2, w, h * 0.3);
-    ctx.fillStyle = frozen ? '#93c5fd' : '#fff';
-    ctx.font = `${s*0.55}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('📅', 0, h * 0.12);
-  } else {
-    // Video call window (variant 0 & 3)
-    ctx.fillStyle = frozen ? '#0c3547' : '#111827';
-    roundRect(-w/2, -h/2, w, h, 4); ctx.fill();
-    ctx.fillStyle = frozen ? '#164e63' : '#1f2937';
-    ctx.fillRect(-w/2, -h/2, w, h * 0.28);
-    // Recording dot
-    ctx.fillStyle = frozen ? '#38bdf8' : '#ef4444';
-    ctx.beginPath(); ctx.arc(w/2-7, -h/2+h*0.14, 3.5, 0, Math.PI*2); ctx.fill();
-    // Person silhouette
-    ctx.fillStyle = clr;
-    ctx.beginPath(); ctx.arc(0, h*0.04, h*0.17, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(0, h*0.38, h*0.24, Math.PI, Math.PI*2); ctx.fill();
-    // Variant 3 — recurring loop badge
-    if (e.variant === 3) {
-      ctx.strokeStyle = frozen ? '#7dd3fc' : '#fbbf24'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(-w/2+9, -h/2+h*0.14, 4, 0.3, Math.PI*1.8); ctx.stroke();
-      ctx.fillStyle = ctx.strokeStyle;
-      ctx.beginPath(); ctx.arc(-w/2+9, -h/2+h*0.14-4, 2.5, 0, Math.PI*2); ctx.fill();
+  const v = e.variant % 3; // 3 types
+
+  if (v === 0) {
+    // ── Slack ──
+    // Body: rounded purple square
+    ctx.fillStyle = ice ? '#1e3a5f' : '#4a154b';
+    roundRect(-w/2, -h/2, w, h, 6); ctx.fill();
+    // White lightning-bolt "S" proxy: two offset rectangles
+    const bc = ice ? '#7dd3fc' : '#fff';
+    ctx.fillStyle = bc;
+    // Top-left bar
+    ctx.save(); ctx.translate(-s*0.18, -s*0.28); ctx.rotate(-0.35);
+    roundRect(-s*0.38, -s*0.1, s*0.76, s*0.2, 3); ctx.fill(); ctx.restore();
+    // Bottom-right bar
+    ctx.save(); ctx.translate(s*0.18, s*0.2); ctx.rotate(-0.35);
+    roundRect(-s*0.38, -s*0.1, s*0.76, s*0.2, 3); ctx.fill(); ctx.restore();
+    // Notification bubble (top-right)
+    if (!ice) {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(w/2 - 4, -h/2 + 5, 5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = `bold 6px Inter,monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('3', w/2 - 4, -h/2 + 5.5);
     }
+
+  } else if (v === 1) {
+    // ── Google Meet ──
+    // Dark rounded body
+    ctx.fillStyle = ice ? '#0c2340' : '#1a1a2e';
+    roundRect(-w/2, -h/2, w, h, 5); ctx.fill();
+    // Camera body rectangle (green/teal)
+    const mc = ice ? '#22d3ee' : '#00897b';
+    ctx.fillStyle = mc;
+    roundRect(-w*0.38, -h*0.28, w*0.52, h*0.55, 3); ctx.fill();
+    // Camera triangle (viewfinder)
+    ctx.fillStyle = ice ? '#67e8f9' : '#4caf50';
+    ctx.beginPath();
+    ctx.moveTo(w*0.17, -h*0.22);
+    ctx.lineTo(w*0.44, -h*0.04);
+    ctx.lineTo(w*0.17, h*0.13);
+    ctx.closePath(); ctx.fill();
+    // Lens
+    ctx.fillStyle = ice ? '#164e63' : '#004d40';
+    ctx.beginPath(); ctx.arc(-w*0.12, 0, h*0.13, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = mc;
+    ctx.beginPath(); ctx.arc(-w*0.12, 0, h*0.07, 0, Math.PI*2); ctx.fill();
+
+  } else {
+    // ── Google Docs ──
+    // Page background
+    ctx.fillStyle = ice ? '#1e3a5f' : '#1a56db';
+    roundRect(-w/2, -h/2, w, h, 4); ctx.fill();
+    // Dog-ear fold top-right
+    const dc = ice ? '#93c5fd' : '#fff';
+    ctx.fillStyle = dc;
+    const fold = s * 0.35;
+    ctx.beginPath();
+    ctx.moveTo(-w*0.38, -h*0.44);
+    ctx.lineTo(w*0.38 - fold, -h*0.44);
+    ctx.lineTo(w*0.38, -h*0.44 + fold);
+    ctx.lineTo(w*0.38, h*0.44);
+    ctx.lineTo(-w*0.38, h*0.44);
+    ctx.closePath(); ctx.fill();
+    // Fold triangle shadow
+    ctx.fillStyle = ice ? '#60a5fa' : '#bfdbfe';
+    ctx.beginPath();
+    ctx.moveTo(w*0.38 - fold, -h*0.44);
+    ctx.lineTo(w*0.38, -h*0.44 + fold);
+    ctx.lineTo(w*0.38 - fold, -h*0.44 + fold);
+    ctx.closePath(); ctx.fill();
+    // Text lines
+    const lc = ice ? '#1e3a5f' : '#1a56db';
+    ctx.fillStyle = lc;
+    const lx = -w*0.28, lw = w*0.44;
+    ctx.fillRect(lx, -h*0.18, lw, s*0.09);
+    ctx.fillRect(lx, -h*0.02, lw, s*0.09);
+    ctx.fillRect(lx,  h*0.14, lw * 0.7, s*0.09);
   }
+
   ctx.shadowBlur = 0;
   ctx.restore();
 }
@@ -719,6 +856,85 @@ function drawDefender(x, y, tableW, tableH, personR, color) {
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.beginPath(); ctx.arc(x - personR*0.2, y - tableH/2 - personR - 2 - personR*0.2, personR*0.3, 0, Math.PI*2); ctx.fill();
   ctx.shadowBlur = 0;
+}
+
+function drawMapFurniture() {
+  // ── Player zone: designer desk ──
+  const dx = 110, dy = 430, dw = 140, dh = 48;
+  // Desk shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  roundRect(dx - dw/2 + 4, dy - dh/2 + 6, dw, dh, 8); ctx.fill();
+  // Desk surface
+  ctx.fillStyle = '#e8e8e8';
+  roundRect(dx - dw/2, dy - dh/2, dw, dh, 8); ctx.fill();
+  // Desk highlight strip
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  roundRect(dx - dw/2 + 4, dy - dh/2 + 4, dw - 8, 8, 4); ctx.fill();
+  // Desk edge
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1.5;
+  roundRect(dx - dw/2, dy - dh/2, dw, dh, 8); ctx.stroke();
+  // Laptop base
+  const lx = dx, ly = dy - 2, lw = 52, lh = 30;
+  ctx.fillStyle = '#c8c8c8';
+  roundRect(lx - lw/2, ly - lh/2, lw, lh, 4); ctx.fill();
+  // Laptop screen (open at angle — drawn as trapezoid)
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.moveTo(lx - lw/2 + 4, ly - lh/2);
+  ctx.lineTo(lx + lw/2 - 4, ly - lh/2);
+  ctx.lineTo(lx + lw/2 - 10, ly - lh/2 - 24);
+  ctx.lineTo(lx - lw/2 + 10, ly - lh/2 - 24);
+  ctx.closePath(); ctx.fill();
+  // Screen glow
+  ctx.fillStyle = '#6366f1';
+  ctx.globalAlpha = 0.35;
+  ctx.beginPath();
+  ctx.moveTo(lx - lw/2 + 7, ly - lh/2 - 2);
+  ctx.lineTo(lx + lw/2 - 7, ly - lh/2 - 2);
+  ctx.lineTo(lx + lw/2 - 12, ly - lh/2 - 21);
+  ctx.lineTo(lx - lw/2 + 12, ly - lh/2 - 21);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+  // Desk legs
+  ctx.fillStyle = '#c0c0c0';
+  ctx.fillRect(dx - dw/2 + 8,  dy + dh/2, 8, 12);
+  ctx.fillRect(dx + dw/2 - 16, dy + dh/2, 8, 12);
+
+  // ── Staging area: background tables with laptops ──
+  const stagingTables = [
+    { x: WALL_X + 90,  y: 120 },
+    { x: WALL_X + 165, y: 340 },
+    { x: WALL_X + 75,  y: 460 },
+  ];
+  for (const t of stagingTables) {
+    const tw = 80, th = 30;
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    roundRect(t.x - tw/2 + 3, t.y - th/2 + 4, tw, th, 5); ctx.fill();
+    // Surface
+    ctx.fillStyle = 'rgba(240,240,245,0.85)';
+    roundRect(t.x - tw/2, t.y - th/2, tw, th, 5); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
+    roundRect(t.x - tw/2, t.y - th/2, tw, th, 5); ctx.stroke();
+    // Mini laptop
+    ctx.fillStyle = '#b0b0b8';
+    roundRect(t.x - 16, t.y - 10, 32, 18, 3); ctx.fill();
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.moveTo(t.x - 13, t.y - 10);
+    ctx.lineTo(t.x + 13, t.y - 10);
+    ctx.lineTo(t.x + 9,  t.y - 24);
+    ctx.lineTo(t.x - 9,  t.y - 24);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#6366f1'; ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.moveTo(t.x - 10, t.y - 12);
+    ctx.lineTo(t.x + 10, t.y - 12);
+    ctx.lineTo(t.x + 7,  t.y - 22);
+    ctx.lineTo(t.x - 7,  t.y - 22);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
 }
 
 function drawHpBar(cx, y, w, hp, maxHp, color) {
@@ -756,6 +972,9 @@ function draw() {
 
   // Staging zone tint
   ctx.fillStyle = 'rgba(239,68,68,0.045)'; ctx.fillRect(WALL_X, 0, W - WALL_X, H);
+
+  // ── Map furniture (desks, laptops) ──
+  drawMapFurniture();
 
   // ── Office partition wall ──
   // Main panel
@@ -947,6 +1166,8 @@ function updateHUD() {
   hpBar.style.width = pct + '%';
   hpBar.style.background = pct > 50 ? '#34d399' : pct > 25 ? '#f59e0b' : '#ef4444';
   hpText.textContent = player ? Math.ceil(player.hp) : 0;
+  if (isBurnout()) burnoutLabel.classList.remove('hidden');
+  else burnoutLabel.classList.add('hidden');
   killCount.textContent = kills;
   quarterNum.textContent = quarter;
   currencyEl.textContent = currency + 'P';
@@ -967,7 +1188,7 @@ function updateShop() {
   shopStartBtn.textContent = `▶  Start Quarter ${quarter}`;
 
   for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
-    const level = permUpgrades[key], maxed = level >= UPGRADE_MAX, cost = UPGRADE_COSTS[key];
+    const level = tempUpgrades[key], maxed = level >= UPGRADE_MAX, cost = UPGRADE_COSTS[key];
     document.getElementById(`level-${key}`).textContent = `[${level}/${UPGRADE_MAX}]`;
     const btn = document.getElementById(`buy-${key}`);
     btn.textContent = maxed ? 'MAX' : `Buy ${cost}P`;
@@ -1008,26 +1229,36 @@ function startQuarter() {
 }
 
 function endQuarter() {
+  state = 'prep';
+  qmTitle.textContent = `Quarter ${quarter} Complete! 🎉`;
+  qmStats.textContent = `+${CURRENCY_Q_BONUS}P bonus · ${kills} total kills`;
+  quarterModal.classList.remove('hidden');
+}
+
+function continueAfterQuarter() {
+  quarterModal.classList.add('hidden');
   currency += CURRENCY_Q_BONUS; quarter++;
   resetField();
   if (player) player.hp = getMaxHp();
-  state = 'prep'; shopEl.classList.remove('hidden');
+  shopEl.classList.remove('hidden');
   updateShop(); updateHUD();
 }
 
 function showDeadScreen() {
-  shopEl.classList.add('hidden'); overlay.classList.remove('hidden');
-  overlayTitle.textContent = '💀 You Died';
-  overlaySub.textContent = `Quarter ${quarter} · ${kills} kills`;
+  shopEl.classList.add('hidden');
+  quarterModal.classList.add('hidden');
+  overlay.classList.remove('hidden');
+  overlayTitle.textContent = '🧠 Your Brain Died';
+  overlaySub.textContent = `Survived to Quarter ${quarter} · ${kills} kills. The meetings won.`;
   overlayHint.style.display = 'none';
-  startBtn.textContent = 'Play Again';
+  startBtn.textContent = 'Try Again';
 }
 
 // ─── Shop events ──────────────────────────────────────────────────────────────
 for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
   document.getElementById(`buy-${key}`).addEventListener('click', () => {
-    if (permUpgrades[key] >= UPGRADE_MAX || currency < UPGRADE_COSTS[key]) return;
-    currency -= UPGRADE_COSTS[key]; permUpgrades[key]++;
+    if (tempUpgrades[key] >= UPGRADE_MAX || currency < UPGRADE_COSTS[key]) return;
+    currency -= UPGRADE_COSTS[key]; tempUpgrades[key]++;
     if (key === 'maxHp' && player) player.hp = Math.min(player.hp + 25, getMaxHp());
     updateShop(); updateHUD();
   });
@@ -1042,6 +1273,7 @@ document.getElementById('place-barricade').addEventListener('click', () => {
 });
 shopStartBtn.addEventListener('click', startQuarter);
 startBtn.addEventListener('click', startGame);
+qmContinue.addEventListener('click', continueAfterQuarter);
 
 // ─── Kick off ─────────────────────────────────────────────────────────────────
 requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
