@@ -2,96 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Survival Shooter</title>
+  <title>Brain Survival</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #111;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      background: #0d0d1a;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       min-height: 100vh;
-      font-family: monospace;
-      color: #eee;
+      font-family: 'Inter', monospace;
+      color: #e2e8f0;
       padding: 12px;
     }
+
+    /* ── HUD bar ── */
     #ui {
-      display: flex;
-      gap: 24px;
-      align-items: center;
-      margin-bottom: 10px;
-      font-size: 13px;
-      flex-wrap: wrap;
+      display: flex; gap: 20px; align-items: center;
+      margin-bottom: 8px; font-size: 12px; flex-wrap: wrap;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 6px 16px;
     }
     #hp-bar-wrap { display: flex; align-items: center; gap: 8px; }
     #hp-bar-bg {
-      width: 180px; height: 14px;
-      background: #333; border-radius: 7px; overflow: hidden;
+      width: 160px; height: 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 5px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
     }
     #hp-bar {
       height: 100%; width: 100%;
-      background: #2ecc71; border-radius: 7px;
+      background: #34d399; border-radius: 5px;
       transition: width 0.1s, background 0.2s;
     }
-    #game-wrapper { display: flex; gap: 12px; align-items: flex-start; }
-    canvas { border: 1px solid #333; display: block; }
+    .hud-label { color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+    .hud-val   { font-weight: 700; font-size: 13px; }
+    #currency-el { color: #fbbf24; font-weight: 700; }
 
-    /* Canvas overlay (menu / dead only) */
+    /* ── Canvas area ── */
+    #game-wrapper { display: flex; gap: 10px; align-items: flex-start; }
+    canvas { border: 1px solid rgba(255,255,255,0.08); display: block; border-radius: 4px; }
+
+    /* ── Overlay (menu / dead) ── */
     #overlay {
-      position: absolute; inset: 0;
+      position: absolute; inset: 0; border-radius: 4px;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 14px; pointer-events: none;
-      background: rgba(0,0,0,0.55);
+      gap: 12px; pointer-events: none;
+      background: rgba(10,10,25,0.7);
+      backdrop-filter: blur(2px);
     }
-    #overlay h1 { font-size: 34px; }
-    #overlay p  { font-size: 15px; color: #aaa; }
+    #overlay h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+    #overlay p  { font-size: 14px; color: #9ca3af; }
     #overlay button {
       pointer-events: all;
-      padding: 10px 28px; font-size: 15px; font-family: monospace;
-      background: #2ecc71; color: #111;
-      border: none; border-radius: 6px; cursor: pointer;
+      padding: 10px 32px; font-size: 14px; font-family: inherit; font-weight: 700;
+      background: #6366f1; color: #fff;
+      border: none; border-radius: 8px; cursor: pointer;
+      box-shadow: 0 0 20px rgba(99,102,241,0.4);
+      transition: background 0.15s, transform 0.1s;
     }
-    #overlay button:hover { background: #27ae60; }
+    #overlay button:hover { background: #4f46e5; transform: scale(1.03); }
 
-    /* Shop panel */
+    /* ── Shop panel ── */
     #shop {
       width: 230px; height: 560px;
-      background: #12121f; border: 1px solid #2a2a40;
+      background: #12121f;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
       padding: 12px; display: flex; flex-direction: column;
       gap: 0; overflow-y: auto; font-size: 12px;
     }
-    #shop-header { margin-bottom: 10px; }
-    #shop-header h2 { font-size: 18px; color: #f1c40f; margin-bottom: 2px; }
-    #shop-header p  { color: #888; font-size: 11px; margin-bottom: 8px; }
+    #shop-header { margin-bottom: 6px; }
+    #shop-header h2 { font-size: 17px; font-weight: 700; color: #fbbf24; margin-bottom: 2px; }
+    #shop-header p  { color: #6b7280; font-size: 11px; }
+    #shop-footer { margin-top: auto; padding-top: 10px; }
     #shop-start-btn {
-      width: 100%; padding: 8px; font-size: 13px; font-family: monospace;
-      background: #2ecc71; color: #111; border: none;
-      border-radius: 5px; cursor: pointer; font-weight: bold;
+      width: 100%; padding: 9px; font-size: 13px; font-family: inherit; font-weight: 700;
+      background: #6366f1; color: #fff; border: none;
+      border-radius: 8px; cursor: pointer;
+      box-shadow: 0 0 14px rgba(99,102,241,0.35);
+      transition: background 0.15s;
     }
-    #shop-start-btn:hover { background: #27ae60; }
-    .shop-section { border-top: 1px solid #2a2a40; padding-top: 8px; margin-top: 8px; }
-    .shop-section-title {
-      color: #555; font-size: 10px; letter-spacing: 1.2px;
-      text-transform: uppercase; margin-bottom: 6px;
-    }
-    .shop-item { margin-bottom: 8px; }
-    .item-name { color: #ddd; margin-bottom: 1px; }
-    .item-name .lvl { color: #f39c12; font-size: 11px; }
-    .item-desc { color: #666; font-size: 10px; margin-bottom: 4px; line-height: 1.4; }
-    .shop-item button {
-      padding: 3px 10px; font-size: 11px; font-family: monospace;
-      background: #1a4a2e; color: #2ecc71;
-      border: 1px solid #2ecc71; border-radius: 3px; cursor: pointer;
-    }
-    .shop-item button:hover:not(:disabled) { background: #2ecc71; color: #111; }
-    .shop-item button:disabled { background: #1a1a2e; color: #444; border-color: #333; cursor: not-allowed; }
-    .shop-item button.active { background: #f39c12; color: #111; border-color: #f39c12; }
-    .color-tower     { color: #2ecc71; }
-    .color-barricade { color: #9b59b6; }
-    .color-sick      { color: #5dade2; }
+    #shop-start-btn:hover { background: #4f46e5; }
 
+    .shop-section { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; margin-top: 8px; }
+    .shop-section-title {
+      color: #4b5563; font-size: 9px; letter-spacing: 1.5px;
+      text-transform: uppercase; margin-bottom: 7px; font-weight: 600;
+    }
+    .shop-item { margin-bottom: 9px; }
+    .item-name { color: #e2e8f0; margin-bottom: 1px; font-weight: 600; font-size: 12px; }
+    .item-name .lvl { color: #f59e0b; font-size: 10px; font-weight: 400; }
+    .item-desc { color: #4b5563; font-size: 10px; margin-bottom: 4px; line-height: 1.4; }
+    .shop-item button {
+      padding: 3px 10px; font-size: 10px; font-family: inherit; font-weight: 600;
+      background: rgba(99,102,241,0.12); color: #818cf8;
+      border: 1px solid rgba(99,102,241,0.35); border-radius: 5px; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .shop-item button:hover:not(:disabled) { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .shop-item button:disabled { background: rgba(255,255,255,0.03); color: #374151; border-color: #1f2937; cursor: not-allowed; }
+    .shop-item button.active { background: #f59e0b; color: #111; border-color: #f59e0b; }
+
+    .color-tower     { color: #34d399; }
+    .color-barricade { color: #a78bfa; }
+    .color-sick      { color: #7dd3fc; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -99,51 +116,46 @@
 
 <div id="ui">
   <div id="hp-bar-wrap">
-    <span>HP</span>
+    <span class="hud-label">HP</span>
     <div id="hp-bar-bg"><div id="hp-bar"></div></div>
-    <span id="hp-text">100</span>
+    <span id="hp-text" class="hud-val">100</span>
   </div>
-  <span>Kills: <b id="kill-count">0</b></span>
-  <span>Quarter: <b id="quarter-num">1</b></span>
-  <span><b id="currency-el" style="color:#f1c40f">100g</b></span>
-  <span id="timer-wrap" class="hidden">Time: <b id="countdown">60s</b></span>
-  <span id="sick-day-wrap" class="hidden" style="color:#5dade2">Sick Days: <b id="sick-day-el">0</b>/3 <span style="color:#444">[Q]</span></span>
+  <span><span class="hud-label">Kills&nbsp;</span><span id="kill-count" class="hud-val">0</span></span>
+  <span><span class="hud-label">Quarter&nbsp;</span><span id="quarter-num" class="hud-val">1</span></span>
+  <span><b id="currency-el">100g</b></span>
+  <span id="timer-wrap" class="hidden"><span class="hud-label">Time&nbsp;</span><b id="countdown">60s</b></span>
+  <span id="sick-day-wrap" class="hidden" style="color:#7dd3fc">😷 <b id="sick-day-el">0</b>/3 <span style="color:#374151">[Q]</span></span>
 </div>
 
 <div id="game-wrapper">
   <div style="position:relative">
     <canvas id="c" width="800" height="560"></canvas>
     <div id="overlay">
-      <h1 id="overlay-title">Survival Shooter</h1>
-      <p id="overlay-sub">Survive as long as you can.</p>
-      <p id="overlay-hint" style="font-size:12px;color:#666">WASD / Arrow Keys · Auto-aim · Q = Sick Day</p>
+      <h1 id="overlay-title">🧠 Brain Survival</h1>
+      <p id="overlay-sub">Survive the corporate onslaught.</p>
+      <p id="overlay-hint" style="font-size:11px;color:#4b5563">WASD · Auto-aim · Q = Sick Day</p>
       <button id="start-btn">Start Game</button>
     </div>
   </div>
 
-  <!-- Shop panel (shown during prep only) -->
   <div id="shop" class="hidden">
     <div id="shop-header">
       <h2 id="shop-quarter-title">Quarter 1</h2>
       <p id="shop-quarter-sub">Enemies are gathering. Get ready.</p>
-      <button id="shop-start-btn">Start Quarter 1</button>
     </div>
 
     <div class="shop-section">
       <div class="shop-section-title">Permanent Upgrades</div>
-
       <div class="shop-item">
         <div class="item-name">⚡ Fire Rate <span class="lvl" id="level-fireRate">[0/3]</span></div>
         <div class="item-desc">Shoot faster each level.</div>
         <button id="buy-fireRate">Buy 80g</button>
       </div>
-
       <div class="shop-item">
         <div class="item-name">❤ Max HP <span class="lvl" id="level-maxHp">[0/3]</span></div>
         <div class="item-desc">+25 max health per level.</div>
         <button id="buy-maxHp">Buy 60g</button>
       </div>
-
       <div class="shop-item">
         <div class="item-name">👟 Move Speed <span class="lvl" id="level-moveSpeed">[0/3]</span></div>
         <div class="item-desc">Move faster each level.</div>
@@ -153,28 +165,29 @@
 
     <div class="shop-section">
       <div class="shop-section-title">Place Defenses — resets each quarter</div>
-
       <div class="shop-item">
         <div class="item-name color-tower">● Staff Designer</div>
-        <div class="item-desc">Person behind table. Shoots at enemies. Click canvas to place.</div>
+        <div class="item-desc">Person behind desk. Shoots at enemies. Click canvas to place.</div>
         <button id="place-tower">Place 50g</button>
       </div>
-
       <div class="shop-item">
         <div class="item-name color-barricade">● Design Manager</div>
-        <div class="item-desc">Person behind wider table. Shoots faster, blocks movement. Click canvas to place.</div>
+        <div class="item-desc">Wider desk, shoots faster, blocks movement. Click canvas to place.</div>
         <button id="place-barricade">Place 80g</button>
       </div>
     </div>
 
     <div class="shop-section">
       <div class="shop-section-title">Abilities</div>
-
       <div class="shop-item">
         <div class="item-name color-sick">😷 Sick Day</div>
         <div class="item-desc">Freezes all enemies 4s. Press Q during round. Max 3/quarter.</div>
         <button id="buy-sickday">Buy 30g (0/3)</button>
       </div>
+    </div>
+
+    <div id="shop-footer">
+      <button id="shop-start-btn">Start Quarter 1</button>
     </div>
   </div>
 </div>
@@ -186,66 +199,65 @@ const ctx    = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
 // ─── UI refs ──────────────────────────────────────────────────────────────────
-const hpBar           = document.getElementById('hp-bar');
-const hpText          = document.getElementById('hp-text');
-const killCount       = document.getElementById('kill-count');
-const quarterNum      = document.getElementById('quarter-num');
-const currencyEl      = document.getElementById('currency-el');
-const timerWrap       = document.getElementById('timer-wrap');
-const countdown       = document.getElementById('countdown');
-const sickDayWrap     = document.getElementById('sick-day-wrap');
-const sickDayEl       = document.getElementById('sick-day-el');
-const overlay         = document.getElementById('overlay');
-const overlayTitle    = document.getElementById('overlay-title');
-const overlaySub      = document.getElementById('overlay-sub');
-const overlayHint     = document.getElementById('overlay-hint');
-const startBtn        = document.getElementById('start-btn');
-const shopEl          = document.getElementById('shop');
+const hpBar            = document.getElementById('hp-bar');
+const hpText           = document.getElementById('hp-text');
+const killCount        = document.getElementById('kill-count');
+const quarterNum       = document.getElementById('quarter-num');
+const currencyEl       = document.getElementById('currency-el');
+const timerWrap        = document.getElementById('timer-wrap');
+const countdown        = document.getElementById('countdown');
+const sickDayWrap      = document.getElementById('sick-day-wrap');
+const sickDayEl        = document.getElementById('sick-day-el');
+const overlay          = document.getElementById('overlay');
+const overlayTitle     = document.getElementById('overlay-title');
+const overlaySub       = document.getElementById('overlay-sub');
+const overlayHint      = document.getElementById('overlay-hint');
+const startBtn         = document.getElementById('start-btn');
+const shopEl           = document.getElementById('shop');
 const shopQuarterTitle = document.getElementById('shop-quarter-title');
-const shopQuarterSub  = document.getElementById('shop-quarter-sub');
-const shopStartBtn    = document.getElementById('shop-start-btn');
+const shopQuarterSub   = document.getElementById('shop-quarter-sub');
+const shopStartBtn     = document.getElementById('shop-start-btn');
 
-// ─── Boost / refill constants ────────────────────────────────────────────────
-const BOOST_DURATION   = 10.0;
-const BOOST_COLORS     = { gun: '#f39c12', shield: '#5dade2', speed: '#e67e22' };
-const BOOST_LABELS     = { gun: '⚡ GUN', shield: '🛡 SHIELD', speed: '👟 SPEED' };
-const REFILL_HEAL_RATE = 10;   // HP/sec while standing on zone
-const REFILL_TOTAL     = 40;   // total HP a zone can give
-const REFILL_MAX       = 3;    // max zones on screen
-const BOOST_MAX        = 2;    // max boost items on screen
+// ─── Boost / refill constants ─────────────────────────────────────────────────
+const BOOST_DURATION  = 10.0;
+const BOOST_COLORS    = { gun: '#f59e0b', shield: '#38bdf8', speed: '#fb923c' };
+const BOOST_LABELS    = { gun: '⚡ GUN', shield: '🛡 SHIELD', speed: '👟 SPEED' };
+const REFILL_HEAL_RATE = 10;
+const REFILL_TOTAL    = 40;
+const REFILL_MAX      = 3;
+const BOOST_MAX       = 2;
 
 // ─── Base constants ───────────────────────────────────────────────────────────
-const BASE_SPEED         = 220;
-const BASE_MAX_HP        = 100;
-const BASE_SHOOT         = 0.5;
-const PLAYER_RADIUS      = 14;
-const ENEMY_SIZE         = 20;
-const ENEMY_BASE_SPD     = 90;
-const BULLET_SPEED       = 380;
-const BULLET_RADIUS      = 5;
-const CONTACT_DMG        = 20;
-const CONTACT_CD         = 1.0;
+const BASE_SPEED        = 220;
+const BASE_MAX_HP       = 100;
+const BASE_SHOOT        = 0.5;
+const PLAYER_RADIUS     = 14;
+const ENEMY_SIZE        = 20;
+const ENEMY_BASE_SPD    = 90;
+const BULLET_SPEED      = 380;
+const BULLET_RADIUS     = 5;
+const CONTACT_DMG       = 20;
+const CONTACT_CD        = 1.0;
 
-const WALL_X             = 580;
-const QUARTER_DURATION   = 60;
-const SPAWN_RATE_START   = 2.0;
-const SPAWN_RATE_END     = 0.5;
-const PREP_SPAWN_INT     = 1.5;
+const WALL_X            = 580;
+const QUARTER_DURATION  = 60;
+const SPAWN_RATE_START  = 2.0;
+const SPAWN_RATE_END    = 0.5;
+const PREP_SPAWN_INT    = 1.5;
 
-// Economy
-const CURRENCY_START     = 100;
-const CURRENCY_PER_KILL  = 10;
-const CURRENCY_Q_BONUS   = 75;
-const UPGRADE_COSTS      = { fireRate: 80, maxHp: 60, moveSpeed: 70 };
-const UPGRADE_MAX        = 3;
-const TOWER_COST         = 50;
-const BARRICADE_COST     = 80;
-const SICK_DAY_COST      = 30;
-const MAX_SICK_DAYS      = 3;
-const SICK_DAY_DURATION  = 4.0;
+const CURRENCY_START    = 100;
+const CURRENCY_PER_KILL = 10;
+const CURRENCY_Q_BONUS  = 75;
+const UPGRADE_COSTS     = { fireRate: 80, maxHp: 60, moveSpeed: 70 };
+const UPGRADE_MAX       = 3;
+const TOWER_COST        = 50;
+const BARRICADE_COST    = 80;
+const SICK_DAY_COST     = 30;
+const MAX_SICK_DAYS     = 3;
+const SICK_DAY_DURATION = 4.0;
 
-// ─── Derived stats (read permUpgrades + active boost) ────────────────────────
-function getSpeed()    {
+// ─── Derived stats ────────────────────────────────────────────────────────────
+function getSpeed() {
   let s = BASE_SPEED + permUpgrades.moveSpeed * 30;
   if (activeBoost && activeBoost.type === 'speed') s *= 1.6;
   return s;
@@ -258,7 +270,6 @@ function getShootInt() {
 }
 
 // ─── Game state ───────────────────────────────────────────────────────────────
-// states: menu | prep | running | dead
 let state = 'menu';
 let player, enemies, bullets, particles, towers, barricades;
 let refillZones, boostItems, activeBoost;
@@ -266,47 +277,34 @@ let kills, currency, quarter, quarterTimer;
 let permUpgrades;
 let sickDaysLeft, frozenTimer;
 let lastEnemy, lastShot, nextRefillAt, nextBoostAt;
-let placementMode = null; // null | 'tower' | 'barricade'
+let placementMode = null;
 let mouseX = 0, mouseY = 0;
 let keys = {};
+let drawTime = 0;
 
-// ─── Init (full game reset) ───────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────────────────────────
 function init() {
   permUpgrades = { fireRate: 0, maxHp: 0, moveSpeed: 0 };
-  currency  = CURRENCY_START;
-  kills     = 0;
-  quarter   = 1;
+  currency = CURRENCY_START;
+  kills    = 0;
+  quarter  = 1;
   resetField();
   resetPlayer();
 }
 
 function resetField() {
-  enemies     = [];
-  bullets     = [];
-  particles   = [];
-  towers      = [];
-  barricades  = [];
-  refillZones = [];
-  boostItems  = [];
-  activeBoost = null;
-  sickDaysLeft = 0;
-  frozenTimer  = 0;
+  enemies = []; bullets = []; particles = [];
+  towers = []; barricades = [];
+  refillZones = []; boostItems = []; activeBoost = null;
+  sickDaysLeft = 0; frozenTimer = 0;
   quarterTimer = QUARTER_DURATION;
-  lastEnemy    = 0;
-  lastShot     = 0;
-  nextRefillAt = 0;
-  nextBoostAt  = 0;
-  placementMode = null;
-  canvas.style.cursor = 'default';
+  lastEnemy = 0; lastShot = 0;
+  nextRefillAt = 0; nextBoostAt = 0;
+  placementMode = null; canvas.style.cursor = 'default';
 }
 
 function resetPlayer() {
-  player = {
-    x: WALL_X / 2, y: H / 2,
-    r: PLAYER_RADIUS,
-    hp: getMaxHp(),
-    contactTimer: 0,
-  };
+  player = { x: WALL_X / 2, y: H / 2, r: PLAYER_RADIUS, hp: getMaxHp(), contactTimer: 0 };
 }
 
 // ─── Spawn helpers ────────────────────────────────────────────────────────────
@@ -314,40 +312,35 @@ function spawnInStaging(released) {
   const x = WALL_X + ENEMY_SIZE + 10 + Math.random() * (W - WALL_X - ENEMY_SIZE * 2 - 20);
   const y = ENEMY_SIZE + 10 + Math.random() * (H - ENEMY_SIZE * 2 - 20);
   enemies.push({
-    x, y,
-    size: ENEMY_SIZE,
+    x, y, size: ENEMY_SIZE,
     speed: ENEMY_BASE_SPD + (quarter - 1) * 15,
-    hitTimer: 0,
-    defHitTimer: 0,
-    released,
+    hitTimer: 0, defHitTimer: 0, released,
+    variant: Math.floor(Math.random() * 4), // visual only
   });
 }
 
-// ─── Refill / boost spawning ─────────────────────────────────────────────────
 function spawnRefillZone() {
   const r = 16;
   refillZones.push({
     x: r + 20 + Math.random() * (WALL_X - r * 2 - 40),
     y: r + 20 + Math.random() * (H - r * 2 - 40),
-    r, healLeft: REFILL_TOTAL, totalHeal: REFILL_TOTAL,
-    healRate: REFILL_HEAL_RATE,
+    r, healLeft: REFILL_TOTAL, totalHeal: REFILL_TOTAL, healRate: REFILL_HEAL_RATE,
   });
 }
 
 function spawnBoostItem() {
   const types = ['gun', 'shield', 'speed'];
   const type  = types[Math.floor(Math.random() * 3)];
-  const a     = Math.random() * Math.PI * 2;
-  const spd   = 22 + Math.random() * 18;
+  const a = Math.random() * Math.PI * 2;
+  const spd = 22 + Math.random() * 18;
   boostItems.push({
     x: 20 + Math.random() * (WALL_X - 40),
     y: 20 + Math.random() * (H - 40),
-    r: 9, type,
-    vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+    r: 9, type, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
   });
 }
 
-// ─── Shooting helper ─────────────────────────────────────────────────────────
+// ─── Shooting ─────────────────────────────────────────────────────────────────
 function shootAt(fromX, fromY, targets, speed) {
   if (!targets.length) return null;
   let nearest = null, best = Infinity;
@@ -374,7 +367,7 @@ function burst(x, y, color, count = 8) {
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if ((state === 'menu' || state === 'dead') && (e.code === 'Space' || e.code === 'Enter')) startGame();
-  if (state === 'prep' && (e.code === 'Space' || e.code === 'Enter')) startQuarter();
+  if (state === 'prep'    && (e.code === 'Space' || e.code === 'Enter')) startQuarter();
   if (state === 'running' && e.code === 'KeyQ') activateSickDay();
   if (e.code === 'Escape' && placementMode) { placementMode = null; canvas.style.cursor = 'default'; updateShop(); }
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
@@ -383,17 +376,14 @@ window.addEventListener('keyup', e => { keys[e.code] = false; });
 
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect();
-  mouseX = e.clientX - r.left;
-  mouseY = e.clientY - r.top;
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
 });
 
 canvas.addEventListener('click', e => {
   if (state !== 'prep' || !placementMode) return;
   const r = canvas.getBoundingClientRect();
-  const cx = e.clientX - r.left;
-  const cy = e.clientY - r.top;
+  const cx = e.clientX - r.left, cy = e.clientY - r.top;
   if (cx >= WALL_X - 30 || cx < 10 || cy < 10 || cy > H - 10) return;
-
   if (placementMode === 'tower' && currency >= TOWER_COST) {
     currency -= TOWER_COST;
     towers.push({ x: cx, y: cy, size: 16, hp: 60, maxHp: 60, lastShot: 0 });
@@ -407,9 +397,7 @@ canvas.addEventListener('click', e => {
 
 function activateSickDay() {
   if (sickDaysLeft <= 0 || frozenTimer > 0) return;
-  sickDaysLeft--;
-  frozenTimer = SICK_DAY_DURATION;
-  updateHUD();
+  sickDaysLeft--; frozenTimer = SICK_DAY_DURATION; updateHUD();
 }
 
 // ─── Game loop ────────────────────────────────────────────────────────────────
@@ -417,19 +405,17 @@ let lastTime = 0;
 function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min((ts - lastTime) / 1000, 0.05);
-  lastTime = ts;
+  lastTime = ts; drawTime = ts;
   if (state === 'prep')    updatePrep(dt, ts);
   if (state === 'running') updateRunning(dt, ts);
   draw();
 }
 
-// ─── Prep update ─────────────────────────────────────────────────────────────
 function updatePrep(dt, ts) {
   if (ts - lastEnemy > PREP_SPAWN_INT * 1000) { spawnInStaging(false); lastEnemy = ts; }
   tickParticles(dt);
 }
 
-// ─── Running update ───────────────────────────────────────────────────────────
 function updateRunning(dt, ts) {
   quarterTimer -= dt;
   if (quarterTimer <= 0) { endQuarter(); return; }
@@ -437,25 +423,15 @@ function updateRunning(dt, ts) {
   if (frozenTimer > 0) frozenTimer = Math.max(0, frozenTimer - dt);
   const frozen = frozenTimer > 0;
 
-  // Active boost countdown
-  if (activeBoost) {
-    activeBoost.timer -= dt;
-    if (activeBoost.timer <= 0) activeBoost = null;
-  }
+  if (activeBoost) { activeBoost.timer -= dt; if (activeBoost.timer <= 0) activeBoost = null; }
 
-  // Refill zone spawning
-  if (ts > nextRefillAt && refillZones.length < REFILL_MAX) {
-    spawnRefillZone();
-    nextRefillAt = ts + 10000 + Math.random() * 5000;
-  }
+  const progress = 1 - (quarterTimer / QUARTER_DURATION);
+  const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
+  if (ts - lastEnemy > spawnInterval * 1000) { spawnInStaging(true); lastEnemy = ts; }
 
-  // Boost item spawning
-  if (ts > nextBoostAt && boostItems.length < BOOST_MAX) {
-    spawnBoostItem();
-    nextBoostAt = ts + 15000 + Math.random() * 5000;
-  }
+  if (ts > nextRefillAt && refillZones.length < REFILL_MAX) { spawnRefillZone(); nextRefillAt = ts + 10000 + Math.random() * 5000; }
+  if (ts > nextBoostAt  && boostItems.length  < BOOST_MAX)  { spawnBoostItem();  nextBoostAt  = ts + 15000 + Math.random() * 5000; }
 
-  // Boost items — drift + player pickup
   for (let i = boostItems.length - 1; i >= 0; i--) {
     const item = boostItems[i];
     item.x += item.vx * dt; item.y += item.vy * dt;
@@ -470,7 +446,6 @@ function updateRunning(dt, ts) {
     }
   }
 
-  // Refill zones — heal player on contact
   for (let i = refillZones.length - 1; i >= 0; i--) {
     const z = refillZones[i];
     if (Math.hypot(z.x - player.x, z.y - player.y) < z.r + player.r) {
@@ -482,19 +457,12 @@ function updateRunning(dt, ts) {
     }
   }
 
-  // Escalating spawn rate
-  const progress = 1 - (quarterTimer / QUARTER_DURATION);
-  const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
-  if (ts - lastEnemy > spawnInterval * 1000) { spawnInStaging(true); lastEnemy = ts; }
-
-  // Player auto-shoot
   if (ts - lastShot > getShootInt() * 1000) {
     const b = shootAt(player.x, player.y, enemies.filter(e => e.released), BULLET_SPEED);
     if (b) bullets.push(b);
     lastShot = ts;
   }
 
-  // Tower shooting (Staff Designer — 1.2s interval)
   for (const t of towers) {
     if (ts - t.lastShot > 1200) {
       const b = shootAt(t.x, t.y, enemies.filter(e => e.released), BULLET_SPEED);
@@ -503,7 +471,6 @@ function updateRunning(dt, ts) {
     }
   }
 
-  // Barricade shooting (Design Manager — 0.8s interval, faster)
   for (const b of barricades) {
     if (ts - b.lastShot > 800) {
       const bullet = shootAt(b.x, b.y, enemies.filter(e => e.released), BULLET_SPEED);
@@ -512,7 +479,6 @@ function updateRunning(dt, ts) {
     }
   }
 
-  // Player movement
   let dx = 0, dy = 0;
   if (keys['KeyW'] || keys['ArrowUp'])    dy -= 1;
   if (keys['KeyS'] || keys['ArrowDown'])  dy += 1;
@@ -523,7 +489,6 @@ function updateRunning(dt, ts) {
   player.y = Math.max(player.r, Math.min(H - player.r, player.y + dy * getSpeed() * dt));
   if (player.contactTimer > 0) player.contactTimer -= dt;
 
-  // Bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt;
@@ -533,7 +498,7 @@ function updateRunning(dt, ts) {
       const e = enemies[j];
       if (!e.released) continue;
       if (Math.abs(b.x - e.x) < e.size && Math.abs(b.y - e.y) < e.size) {
-        burst(e.x, e.y, '#e74c3c', 10);
+        burst(e.x, e.y, '#ef4444', 10);
         enemies.splice(j, 1);
         kills++; currency += CURRENCY_PER_KILL;
         hit = true; updateHUD(); break;
@@ -542,7 +507,6 @@ function updateRunning(dt, ts) {
     if (hit) { bullets.splice(i,1); }
   }
 
-  // Enemy movement & contacts
   if (!frozen) {
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
@@ -551,48 +515,39 @@ function updateRunning(dt, ts) {
       if (e.hitTimer > 0) e.hitTimer -= dt;
       if (e.defHitTimer > 0) e.defHitTimer -= dt;
 
-      // Player contact
       if (Math.abs(e.x - player.x) < e.size + player.r - 4 &&
           Math.abs(e.y - player.y) < e.size + player.r - 4) {
         if (player.contactTimer <= 0) {
           if (activeBoost && activeBoost.type === 'shield') {
-            // immune — bounce enemy away, no damage
-            burst(player.x, player.y, '#5dade2', 6);
-            enemies.splice(i, 1);
-            player.contactTimer = CONTACT_CD;
-            continue;
+            burst(player.x, player.y, '#38bdf8', 6);
+            enemies.splice(i, 1); player.contactTimer = CONTACT_CD; continue;
           }
           player.hp = Math.max(0, player.hp - CONTACT_DMG);
           player.contactTimer = CONTACT_CD;
-          burst(player.x, player.y, '#e74c3c', 6);
-          enemies.splice(i, 1);
-          updateHUD();
+          burst(player.x, player.y, '#ef4444', 6);
+          enemies.splice(i, 1); updateHUD();
           if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
           continue;
         }
       }
 
-      // Tower contact
       for (let j = towers.length - 1; j >= 0; j--) {
         const t = towers[j];
-        if (Math.abs(e.x - t.x) < e.size + t.size - 4 &&
-            Math.abs(e.y - t.y) < e.size + t.size - 4) {
+        if (Math.abs(e.x - t.x) < e.size + t.size - 4 && Math.abs(e.y - t.y) < e.size + t.size - 4) {
           if (e.defHitTimer <= 0) {
             t.hp -= 20; e.defHitTimer = 0.8;
-            if (t.hp <= 0) { burst(t.x, t.y, '#2ecc71', 12); towers.splice(j, 1); }
+            if (t.hp <= 0) { burst(t.x, t.y, '#34d399', 12); towers.splice(j, 1); }
           }
           break;
         }
       }
 
-      // Barricade contact
       for (let j = barricades.length - 1; j >= 0; j--) {
         const b = barricades[j];
-        if (Math.abs(e.x - b.x) < e.size + b.size - 4 &&
-            Math.abs(e.y - b.y) < e.size + b.size - 4) {
+        if (Math.abs(e.x - b.x) < e.size + b.size - 4 && Math.abs(e.y - b.y) < e.size + b.size - 4) {
           if (e.defHitTimer <= 0) {
             b.hp -= 15; e.defHitTimer = 0.8;
-            if (b.hp <= 0) { burst(b.x, b.y, '#9b59b6', 12); barricades.splice(j, 1); }
+            if (b.hp <= 0) { burst(b.x, b.y, '#a78bfa', 12); barricades.splice(j, 1); }
           }
           break;
         }
@@ -608,11 +563,9 @@ function moveEnemyToPlayer(e, dt) {
   const a = Math.atan2(player.y - e.y, player.x - e.x);
   const nx = e.x + Math.cos(a) * e.speed * dt;
   const ny = e.y + Math.sin(a) * e.speed * dt;
-
   const blocked = (tx, ty) => barricades.some(b =>
     Math.abs(tx - b.x) < e.size + b.size && Math.abs(ty - b.y) < e.size + b.size
   );
-
   if (!blocked(nx, ny)) { e.x = nx; e.y = ny; }
   else {
     if (!blocked(nx, e.y)) e.x = nx;
@@ -630,72 +583,232 @@ function tickParticles(dt) {
   }
 }
 
-// ─── Draw ─────────────────────────────────────────────────────────────────────
-function draw() {
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, W, H);
+// ─── Draw helpers ─────────────────────────────────────────────────────────────
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
 
-  // Staging zone tint
-  ctx.fillStyle = 'rgba(231,76,60,0.06)';
-  ctx.fillRect(WALL_X, 0, W - WALL_X, H);
+function drawBrain(x, y, r, flash, hasShield) {
+  ctx.save();
+  ctx.translate(x, y);
+  const br = r * 1.15;
 
-  // Grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-  // Wall
-  ctx.strokeStyle = 'rgba(231,76,60,0.55)';
-  ctx.lineWidth = 3; ctx.setLineDash([12, 8]);
-  ctx.beginPath(); ctx.moveTo(WALL_X, 0); ctx.lineTo(WALL_X, H); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = 'rgba(231,76,60,0.4)';
-  ctx.font = '11px monospace'; ctx.textAlign = 'center';
-  ctx.fillText('STAGING', WALL_X + (W - WALL_X) / 2, 16);
-  ctx.textAlign = 'left';
-
-  // Refill zones
-  for (const z of refillZones) {
-    const pct = z.healLeft / z.totalHeal;
-    const r   = 8 + 10 * pct; // shrinks as depleted
-    ctx.globalAlpha = 0.25 + 0.35 * pct;
-    ctx.fillStyle = '#7dcea0';
-    ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 0.5 + 0.4 * pct;
-    ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(z.x, z.y, r + 5, 0, Math.PI * 2); ctx.stroke();
-    // progress arc (full ring at max, shrinks clockwise)
-    ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 3; ctx.globalAlpha = 0.9;
-    ctx.beginPath(); ctx.arc(z.x, z.y, r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct); ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  // Boost items (diamond = rotated square)
-  for (const item of boostItems) {
-    ctx.fillStyle = BOOST_COLORS[item.type];
-    ctx.shadowColor = BOOST_COLORS[item.type]; ctx.shadowBlur = 12;
-    ctx.save();
-    ctx.translate(item.x, item.y);
-    ctx.rotate(Math.PI / 4);
-    ctx.fillRect(-item.r, -item.r, item.r * 2, item.r * 2);
-    ctx.restore();
+  if (hasShield) {
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 22;
+    ctx.beginPath(); ctx.arc(0, 0, br + 11, 0, Math.PI * 2); ctx.stroke();
     ctx.shadowBlur = 0;
   }
 
-  // Design Managers (purple) — wide table + person dot, also blocks enemies
+  ctx.shadowColor = '#be185d'; ctx.shadowBlur = flash ? 22 : 10;
+  const fill = flash ? '#fda4af' : '#f9a8d4';
+
+  // Left hemisphere
+  ctx.fillStyle = fill;
+  ctx.beginPath(); ctx.ellipse(-br*0.13, -br*0.04, br*0.68, br*0.78, -0.08, 0, Math.PI*2); ctx.fill();
+  // Right hemisphere
+  ctx.beginPath(); ctx.ellipse(br*0.13, -br*0.04, br*0.68, br*0.78, 0.08, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Folds
+  ctx.strokeStyle = 'rgba(157,23,77,0.40)'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -br*0.62); ctx.bezierCurveTo(-br*0.07, -br*0.18, br*0.07, br*0.18, 0, br*0.62); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-br*0.44, -br*0.32); ctx.quadraticCurveTo(-br*0.7, br*0.04, -br*0.42, br*0.34); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(br*0.44, -br*0.32); ctx.quadraticCurveTo(br*0.7, br*0.04, br*0.42, br*0.34); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-br*0.32, -br*0.56); ctx.quadraticCurveTo(0, -br*0.8, br*0.32, -br*0.56); ctx.stroke();
+
+  // Eyes
+  const ey = br * 0.17;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-br*0.21, ey, br*0.115, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(br*0.21, ey, br*0.115, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1e1b4b';
+  ctx.beginPath(); ctx.arc(-br*0.21, ey+br*0.02, br*0.065, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(br*0.21, ey+br*0.02, br*0.065, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-br*0.18, ey-br*0.01, br*0.025, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(br*0.24, ey-br*0.01, br*0.025, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEnemy(e, frozen) {
+  ctx.save();
+  ctx.translate(e.x, e.y);
+  const s = e.size;
+  const w = s * 1.9, h = s * 1.5;
+  const clr = frozen ? '#38bdf8' : '#ef4444';
+  ctx.shadowColor = clr; ctx.shadowBlur = 7;
+
+  if (e.variant === 1) {
+    // Slack message bubble
+    ctx.fillStyle = frozen ? '#164e63' : '#4a154b';
+    roundRect(-w/2, -h/2, w, h, 5); ctx.fill();
+    // Bubble tail
+    ctx.beginPath(); ctx.moveTo(-s*0.35, h/2); ctx.lineTo(-s*0.65, h/2+s*0.28); ctx.lineTo(-s*0.05, h/2); ctx.fill();
+    ctx.fillStyle = clr; ctx.font = `bold ${s*0.85}px monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('#', 0, 0);
+  } else if (e.variant === 2) {
+    // Calendar / planning doc
+    ctx.fillStyle = frozen ? '#1e3a5f' : '#1e3a8a';
+    roundRect(-w/2, -h/2, w, h, 4); ctx.fill();
+    ctx.fillStyle = clr;
+    ctx.fillRect(-w/2, -h/2, w, h * 0.3);
+    ctx.fillStyle = frozen ? '#93c5fd' : '#fff';
+    ctx.font = `${s*0.55}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('📅', 0, h * 0.12);
+  } else {
+    // Video call window (variant 0 & 3)
+    ctx.fillStyle = frozen ? '#0c3547' : '#111827';
+    roundRect(-w/2, -h/2, w, h, 4); ctx.fill();
+    ctx.fillStyle = frozen ? '#164e63' : '#1f2937';
+    ctx.fillRect(-w/2, -h/2, w, h * 0.28);
+    // Recording dot
+    ctx.fillStyle = frozen ? '#38bdf8' : '#ef4444';
+    ctx.beginPath(); ctx.arc(w/2-7, -h/2+h*0.14, 3.5, 0, Math.PI*2); ctx.fill();
+    // Person silhouette
+    ctx.fillStyle = clr;
+    ctx.beginPath(); ctx.arc(0, h*0.04, h*0.17, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, h*0.38, h*0.24, Math.PI, Math.PI*2); ctx.fill();
+    // Variant 3 — recurring loop badge
+    if (e.variant === 3) {
+      ctx.strokeStyle = frozen ? '#7dd3fc' : '#fbbf24'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(-w/2+9, -h/2+h*0.14, 4, 0.3, Math.PI*1.8); ctx.stroke();
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.beginPath(); ctx.arc(-w/2+9, -h/2+h*0.14-4, 2.5, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawDefender(x, y, tableW, tableH, personR, color) {
+  ctx.shadowColor = color; ctx.shadowBlur = 8;
+  // Desk legs (subtle)
+  ctx.fillStyle = color + '55';
+  ctx.fillRect(x - tableW/2 + 3, y + tableH/2, 4, 6);
+  ctx.fillRect(x + tableW/2 - 7, y + tableH/2, 4, 6);
+  // Desk surface
+  ctx.fillStyle = color;
+  roundRect(x - tableW/2, y - tableH/2, tableW, tableH, 3); ctx.fill();
+  // Desk top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  roundRect(x - tableW/2 + 2, y - tableH/2 + 2, tableW - 4, tableH * 0.4, 2); ctx.fill();
+  // Person head
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y - tableH/2 - personR - 2, personR, 0, Math.PI*2); ctx.fill();
+  // Person face highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.beginPath(); ctx.arc(x - personR*0.2, y - tableH/2 - personR - 2 - personR*0.2, personR*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawHpBar(cx, y, w, hp, maxHp, color) {
+  const x = cx - w / 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x - 1, y - 1, w + 2, 5);
+  ctx.fillStyle = '#1f2937'; ctx.fillRect(x, y, w, 3);
+  ctx.fillStyle = color; ctx.fillRect(x, y, w * (hp / maxHp), 3);
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+function draw() {
+  // ── Background: dark office floor ──
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, W, H);
+
+  // Office tile grid
+  ctx.strokeStyle = 'rgba(99,102,241,0.055)'; ctx.lineWidth = 1;
+  for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Player zone desk-lamp warmth
+  const lampGrad = ctx.createRadialGradient(WALL_X*0.45, H*0.5, 0, WALL_X*0.45, H*0.5, WALL_X * 0.75);
+  lampGrad.addColorStop(0, 'rgba(251,191,36,0.045)');
+  lampGrad.addColorStop(1, 'rgba(251,191,36,0)');
+  ctx.fillStyle = lampGrad; ctx.fillRect(0, 0, WALL_X, H);
+
+  // Staging zone tint
+  ctx.fillStyle = 'rgba(239,68,68,0.045)'; ctx.fillRect(WALL_X, 0, W - WALL_X, H);
+
+  // ── Office partition wall ──
+  // Main panel
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(WALL_X - 3, 0, 6, H);
+  // Warning stripe
+  ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 2;
+  ctx.setLineDash([10, 7]);
+  ctx.beginPath(); ctx.moveTo(WALL_X, 0); ctx.lineTo(WALL_X, H); ctx.stroke();
+  ctx.setLineDash([]);
+  // Partition top trim
+  ctx.fillStyle = '#374151'; ctx.fillRect(WALL_X - 5, 0, 10, 4);
+  ctx.fillRect(WALL_X - 5, H - 4, 10, 4);
+
+  // Staging badge
+  const bx = WALL_X + (W - WALL_X) / 2;
+  ctx.fillStyle = 'rgba(239,68,68,0.18)';
+  roundRect(bx - 28, 7, 56, 15, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(239,68,68,0.75)'; ctx.font = '9px Inter,monospace'; ctx.textAlign = 'center';
+  ctx.fillText('STAGING', bx, 18); ctx.textAlign = 'left';
+
+  // ── Refill zones ──
+  for (const z of refillZones) {
+    const pct = z.healLeft / z.totalHeal;
+    const r   = 9 + 9 * pct;
+    ctx.shadowColor = '#34d399'; ctx.shadowBlur = 10 * pct;
+    ctx.fillStyle = `rgba(52,211,153,${0.13 + 0.15*pct})`;
+    ctx.beginPath(); ctx.arc(z.x, z.y, r + 9, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = `rgba(52,211,153,${0.35 + 0.3*pct})`;
+    ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(z.x, z.y, r+5, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct); ctx.stroke();
+    ctx.globalAlpha = 0.6 + 0.3 * pct;
+    ctx.font = `${r * 1.15}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('☕', z.x, z.y + 1);
+    ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic';
+  }
+
+  // ── Boost items (spinning diamonds) ──
+  const spin = (drawTime * 0.0009) % (Math.PI * 2);
+  const boostIcons = { gun: '⚡', shield: '🛡', speed: '💨' };
+  for (const item of boostItems) {
+    ctx.save();
+    ctx.translate(item.x, item.y);
+    ctx.shadowColor = BOOST_COLORS[item.type]; ctx.shadowBlur = 14;
+    ctx.rotate(spin);
+    ctx.fillStyle = BOOST_COLORS[item.type];
+    ctx.beginPath();
+    ctx.moveTo(0, -item.r*1.45); ctx.lineTo(item.r, 0);
+    ctx.lineTo(0, item.r*1.45); ctx.lineTo(-item.r, 0); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.rotate(-spin);
+    ctx.font = `${item.r * 1.25}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(boostIcons[item.type], 0, 1);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // ── Design Managers (barricades) ──
   for (const b of barricades) {
-    drawDefender(b.x, b.y, 44, 12, 6, '#9b59b6');
-    drawHpBar(b.x, b.y - 26, 44, b.hp, b.maxHp, '#9b59b6');
+    drawDefender(b.x, b.y, 44, 12, 6, '#a78bfa');
+    drawHpBar(b.x, b.y - 26, 44, b.hp, b.maxHp, '#a78bfa');
   }
 
-  // Staff Designers (green) — narrower table + person dot
+  // ── Staff Designers (towers) ──
   for (const t of towers) {
-    drawDefender(t.x, t.y, 30, 9, 5, '#2ecc71');
-    drawHpBar(t.x, t.y - 22, 30, t.hp, t.maxHp, '#2ecc71');
+    drawDefender(t.x, t.y, 30, 9, 5, '#34d399');
+    drawHpBar(t.x, t.y - 22, 30, t.hp, t.maxHp, '#34d399');
   }
 
-  // Particles
+  // ── Particles ──
   for (const p of particles) {
     ctx.globalAlpha = p.life / p.maxLife;
     ctx.fillStyle = p.color;
@@ -703,101 +816,72 @@ function draw() {
   }
   ctx.globalAlpha = 1;
 
-  // Enemies
+  // ── Enemies ──
   const frozen = frozenTimer > 0;
-  for (const e of enemies) {
-    ctx.fillStyle = (frozen && e.released) ? '#5dade2' : e.released ? '#e74c3c' : '#8b2a2a';
-    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = e.released ? 8 : 3;
-    ctx.fillRect(e.x - e.size, e.y - e.size, e.size * 2, e.size * 2);
-    ctx.shadowBlur = 0;
-  }
+  for (const e of enemies) { drawEnemy(e, frozen && e.released); }
 
-  // Bullets
-  ctx.fillStyle = '#f1c40f'; ctx.shadowColor = '#f1c40f'; ctx.shadowBlur = 10;
+  // ── Bullets ──
+  ctx.fillStyle = '#fde68a'; ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 8;
   for (const b of bullets) {
     ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
   }
   ctx.shadowBlur = 0;
 
-  // Player
+  // ── Player ──
   if (player) {
-    ctx.fillStyle = player.contactTimer > 0 ? '#80b3ff' : '#3498db';
-    ctx.shadowColor = '#3498db'; ctx.shadowBlur = 16;
-    ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.shadowBlur = 0;
-    ctx.beginPath(); ctx.arc(player.x, player.y, 3, 0, Math.PI*2); ctx.fill();
+    const hasShield = !!(activeBoost && activeBoost.type === 'shield');
+    drawBrain(player.x, player.y, player.r, player.contactTimer > 0, hasShield);
   }
-  ctx.shadowBlur = 0;
 
-  // Active boost indicator
+  // ── Frozen overlay ──
+  if (frozen) {
+    ctx.fillStyle = 'rgba(56,189,248,0.08)'; ctx.fillRect(0, 0, WALL_X, H);
+    ctx.fillStyle = 'rgba(56,189,248,0.9)'; ctx.font = 'bold 15px Inter,monospace'; ctx.textAlign = 'center';
+    ctx.fillText(`❄ FROZEN  ${frozenTimer.toFixed(1)}s`, WALL_X/2, 40);
+    ctx.textAlign = 'left';
+  }
+
+  // ── Active boost pill ──
   if (activeBoost && state === 'running') {
     const color = BOOST_COLORS[activeBoost.type];
     const label = BOOST_LABELS[activeBoost.type];
-    const bw = 130, bh = 20, bx = 10, by = 22;
+    const pct = activeBoost.timer / BOOST_DURATION;
+    const bw = 138, bh = 20, bx = 10, by = frozen ? 52 : 22;
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(bx, by, bw, bh);
-    ctx.fillStyle = color;
-    ctx.fillRect(bx, by, bw * (activeBoost.timer / BOOST_DURATION), bh);
-    ctx.fillStyle = '#111';
-    ctx.font = 'bold 11px monospace'; ctx.textAlign = 'left';
-    ctx.fillText(`${label}  ${activeBoost.timer.toFixed(1)}s`, bx + 6, by + 14);
+    roundRect(bx, by, bw, bh, 10); ctx.fill();
+    ctx.fillStyle = color + '44';
+    roundRect(bx, by, bw * pct, bh, 10); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.3;
+    roundRect(bx, by, bw, bh, 10); ctx.stroke();
+    ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 10px Inter,monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`${label}  ${activeBoost.timer.toFixed(1)}s`, bx + bw/2, by + bh/2);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
-  // Frozen overlay
-  if (frozen) {
-    ctx.fillStyle = 'rgba(93,173,226,0.10)';
-    ctx.fillRect(0, 0, WALL_X, H);
-    ctx.fillStyle = 'rgba(93,173,226,0.9)';
-    ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(`❄ FROZEN ${frozenTimer.toFixed(1)}s`, WALL_X / 2, 38);
-    ctx.textAlign = 'left';
-  }
-
-  // Placement ghost (during prep)
+  // ── Placement ghost ──
   if (placementMode && state === 'prep') {
     const valid = mouseX < WALL_X - 30 && mouseX > 10 && mouseY > 10 && mouseY < H - 10;
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = 0.45;
     if (placementMode === 'tower') {
-      ctx.fillStyle = valid ? '#2ecc71' : '#e74c3c';
-      ctx.fillRect(mouseX - 16, mouseY - 16, 32, 32);
+      drawDefender(mouseX, mouseY, 30, 9, 5, valid ? '#34d399' : '#ef4444');
     } else {
-      ctx.fillStyle = valid ? '#9b59b6' : '#e74c3c';
-      ctx.fillRect(mouseX - 22, mouseY - 22, 44, 44);
+      drawDefender(mouseX, mouseY, 44, 12, 6, valid ? '#a78bfa' : '#ef4444');
     }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = '11px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(valid ? 'Click to place' : 'Left side only', mouseX, mouseY - 28);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '10px Inter,monospace'; ctx.textAlign = 'center';
+    ctx.fillText(valid ? 'Click to place' : 'Left side only', mouseX, mouseY - 32);
     ctx.textAlign = 'left';
   }
 
-  // Quarter timer bar at bottom (running only)
+  // ── Quarter timer bar ──
   if (state === 'running') {
     const pct = quarterTimer / QUARTER_DURATION;
     const bw = WALL_X - 20;
-    ctx.fillStyle = 'rgba(255,255,255,0.07)';
-    ctx.fillRect(10, H - 8, bw, 5);
-    ctx.fillStyle = pct > 0.4 ? '#2ecc71' : pct > 0.2 ? '#f39c12' : '#e74c3c';
-    ctx.fillRect(10, H - 8, bw * pct, 5);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(10, H - 9, bw, 5);
+    ctx.fillStyle = pct > 0.4 ? '#34d399' : pct > 0.2 ? '#f59e0b' : '#ef4444';
+    ctx.fillRect(10, H - 9, bw * pct, 5);
   }
-}
-
-function drawDefender(x, y, tableW, tableH, personR, color) {
-  ctx.shadowColor = color; ctx.shadowBlur = 8;
-  ctx.fillStyle = color;
-  // Table
-  ctx.fillRect(x - tableW / 2, y - tableH / 2, tableW, tableH);
-  // Person dot above table
-  ctx.beginPath();
-  ctx.arc(x, y - tableH / 2 - personR - 2, personR, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-}
-
-function drawHpBar(cx, y, w, hp, maxHp, color) {
-  const x = cx - w / 2;
-  ctx.fillStyle = '#222'; ctx.fillRect(x, y, w, 3);
-  ctx.fillStyle = color;  ctx.fillRect(x, y, w * (hp / maxHp), 3);
 }
 
 // ─── HUD ──────────────────────────────────────────────────────────────────────
@@ -805,12 +889,11 @@ function updateHUD() {
   const maxHp = getMaxHp();
   const pct = player ? (player.hp / maxHp * 100) : 0;
   hpBar.style.width = pct + '%';
-  hpBar.style.background = pct > 50 ? '#2ecc71' : pct > 25 ? '#f39c12' : '#e74c3c';
+  hpBar.style.background = pct > 50 ? '#34d399' : pct > 25 ? '#f59e0b' : '#ef4444';
   hpText.textContent = player ? Math.ceil(player.hp) : 0;
   killCount.textContent = kills;
   quarterNum.textContent = quarter;
   currencyEl.textContent = currency + 'g';
-
   if (state === 'running') {
     timerWrap.classList.remove('hidden');
     countdown.textContent = Math.ceil(quarterTimer) + 's';
@@ -828,116 +911,88 @@ function updateShop() {
   shopQuarterSub.textContent = quarter === 1
     ? 'Enemies are gathering. Get ready.'
     : `Quarter ${quarter - 1} cleared! +${CURRENCY_Q_BONUS}g bonus received.`;
-  shopStartBtn.textContent = `Start Quarter ${quarter}`;
+  shopStartBtn.textContent = `▶  Start Quarter ${quarter}`;
 
-  // Permanent upgrades
   for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
-    const level = permUpgrades[key];
-    const maxed = level >= UPGRADE_MAX;
-    const cost  = UPGRADE_COSTS[key];
+    const level = permUpgrades[key], maxed = level >= UPGRADE_MAX, cost = UPGRADE_COSTS[key];
     document.getElementById(`level-${key}`).textContent = `[${level}/${UPGRADE_MAX}]`;
     const btn = document.getElementById(`buy-${key}`);
     btn.textContent = maxed ? 'MAX' : `Buy ${cost}g`;
-    btn.disabled    = maxed || currency < cost;
+    btn.disabled = maxed || currency < cost;
   }
 
-  // Tower placement
   const tBtn = document.getElementById('place-tower');
   if (placementMode === 'tower') {
     tBtn.textContent = 'Cancel [ESC]'; tBtn.classList.add('active'); tBtn.disabled = false;
-  } else {
-    tBtn.textContent = `Place ${TOWER_COST}g`; tBtn.classList.remove('active');
-    tBtn.disabled = currency < TOWER_COST;
-  }
+  } else { tBtn.textContent = `Place ${TOWER_COST}g`; tBtn.classList.remove('active'); tBtn.disabled = currency < TOWER_COST; }
 
-  // Barricade placement
   const bBtn = document.getElementById('place-barricade');
   if (placementMode === 'barricade') {
     bBtn.textContent = 'Cancel [ESC]'; bBtn.classList.add('active'); bBtn.disabled = false;
-  } else {
-    bBtn.textContent = `Place ${BARRICADE_COST}g`; bBtn.classList.remove('active');
-    bBtn.disabled = currency < BARRICADE_COST;
-  }
+  } else { bBtn.textContent = `Place ${BARRICADE_COST}g`; bBtn.classList.remove('active'); bBtn.disabled = currency < BARRICADE_COST; }
 
-  // Sick day
   const sBtn = document.getElementById('buy-sickday');
-  const full  = sickDaysLeft >= MAX_SICK_DAYS;
+  const full = sickDaysLeft >= MAX_SICK_DAYS;
   sBtn.textContent = full ? `Max (${sickDaysLeft}/${MAX_SICK_DAYS})` : `Buy ${SICK_DAY_COST}g (${sickDaysLeft}/${MAX_SICK_DAYS})`;
-  sBtn.disabled    = full || currency < SICK_DAY_COST;
+  sBtn.disabled = full || currency < SICK_DAY_COST;
 }
 
 // ─── State transitions ────────────────────────────────────────────────────────
 function startGame() {
-  init();
-  state = 'prep';
-  overlay.classList.add('hidden');
-  shopEl.classList.remove('hidden');
+  init(); state = 'prep';
+  overlay.classList.add('hidden'); shopEl.classList.remove('hidden');
   updateShop(); updateHUD();
 }
 
 function startQuarter() {
   for (const e of enemies) e.released = true;
   quarterTimer = QUARTER_DURATION;
-  lastEnemy    = performance.now();
-  lastShot     = performance.now();
-  frozenTimer  = 0;
+  lastEnemy = performance.now(); lastShot = performance.now();
+  frozenTimer = 0;
   nextRefillAt = performance.now() + 8000;
   nextBoostAt  = performance.now() + 12000;
-  state        = 'running';
-  shopEl.classList.add('hidden');
-  placementMode = null; canvas.style.cursor = 'default';
+  state = 'running';
+  shopEl.classList.add('hidden'); placementMode = null; canvas.style.cursor = 'default';
   updateHUD();
 }
 
 function endQuarter() {
-  currency += CURRENCY_Q_BONUS;
-  quarter++;
+  currency += CURRENCY_Q_BONUS; quarter++;
   resetField();
-  if (player) player.hp = getMaxHp(); // restore HP between quarters
-  state = 'prep';
-  shopEl.classList.remove('hidden');
+  if (player) player.hp = getMaxHp();
+  state = 'prep'; shopEl.classList.remove('hidden');
   updateShop(); updateHUD();
 }
 
 function showDeadScreen() {
-  shopEl.classList.add('hidden');
-  overlay.classList.remove('hidden');
-  overlayTitle.textContent = 'You Died';
-  overlaySub.textContent   = `Quarter ${quarter} · ${kills} kills`;
+  shopEl.classList.add('hidden'); overlay.classList.remove('hidden');
+  overlayTitle.textContent = '💀 You Died';
+  overlaySub.textContent = `Quarter ${quarter} · ${kills} kills`;
   overlayHint.style.display = 'none';
-  startBtn.textContent     = 'Play Again';
+  startBtn.textContent = 'Play Again';
 }
 
-// ─── Shop event wiring ────────────────────────────────────────────────────────
+// ─── Shop events ──────────────────────────────────────────────────────────────
 for (const key of ['fireRate', 'maxHp', 'moveSpeed']) {
   document.getElementById(`buy-${key}`).addEventListener('click', () => {
     if (permUpgrades[key] >= UPGRADE_MAX || currency < UPGRADE_COSTS[key]) return;
-    currency -= UPGRADE_COSTS[key];
-    permUpgrades[key]++;
+    currency -= UPGRADE_COSTS[key]; permUpgrades[key]++;
     if (key === 'maxHp' && player) player.hp = Math.min(player.hp + 25, getMaxHp());
     updateShop(); updateHUD();
   });
 }
-
 document.getElementById('place-tower').addEventListener('click', () => {
   placementMode = placementMode === 'tower' ? null : (currency >= TOWER_COST ? 'tower' : null);
-  canvas.style.cursor = placementMode ? 'crosshair' : 'default';
-  updateShop();
+  canvas.style.cursor = placementMode ? 'crosshair' : 'default'; updateShop();
 });
-
 document.getElementById('place-barricade').addEventListener('click', () => {
   placementMode = placementMode === 'barricade' ? null : (currency >= BARRICADE_COST ? 'barricade' : null);
-  canvas.style.cursor = placementMode ? 'crosshair' : 'default';
-  updateShop();
+  canvas.style.cursor = placementMode ? 'crosshair' : 'default'; updateShop();
 });
-
 document.getElementById('buy-sickday').addEventListener('click', () => {
   if (sickDaysLeft >= MAX_SICK_DAYS || currency < SICK_DAY_COST) return;
-  currency -= SICK_DAY_COST;
-  sickDaysLeft++;
-  updateShop(); updateHUD();
+  currency -= SICK_DAY_COST; sickDaysLeft++; updateShop(); updateHUD();
 });
-
 shopStartBtn.addEventListener('click', startQuarter);
 startBtn.addEventListener('click', startGame);
 
