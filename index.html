@@ -111,11 +111,11 @@
       box-shadow: 0 0 56px rgba(99,102,241,0.2), 0 12px 40px rgba(0,0,0,0.7);
       max-width: 380px; text-align: center;
     }
-    #overlay h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+    #overlay h1 { font-size: 20px; font-weight: 700; letter-spacing: 0; font-family: 'Press Start 2P', monospace; line-height: 1.5; }
     #overlay p  { font-size: 14px; color: #9ca3af; }
     #overlay button {
       pointer-events: all;
-      padding: 11px 36px; font-size: 14px; font-family: inherit; font-weight: 700;
+      padding: 13px 28px; font-size: 11px; font-family: 'Press Start 2P', monospace; font-weight: 700;
       background: #6366f1; color: #fff;
       border: none; border-radius: 10px; cursor: pointer;
       box-shadow: 0 0 24px rgba(99,102,241,0.5);
@@ -165,7 +165,8 @@
     }
     .shop-section-header { margin-bottom: 8px; }
     .shop-section-title {
-      font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      font-family: 'Press Start 2P', monospace;
     }
     .shop-section-upgrades .shop-section-title { color: #a5b4fc; }
     .shop-section-defenses .shop-section-title { color: #d8b4fe; }
@@ -180,10 +181,10 @@
       display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
     }
     .item-icon { font-size: 20px; line-height: 1; }
-    .item-limit { font-size: 9px; color: #C9C9C7; font-weight: 600; }
+    .item-limit { font-size: 8px; color: #C9C9C7; font-weight: 600; font-family: 'Press Start 2P', monospace; }
     .item-desc-small { color: #9B9A97; font-size: 9px; line-height: 1.3; }
     .shop-item button {
-      width: 100%; padding: 4px 0; font-size: 9px; font-family: inherit; font-weight: 700;
+      width: 100%; padding: 5px 0; font-size: 7px; font-family: 'Press Start 2P', monospace; font-weight: 700;
       background: rgba(99,102,241,0.12); color: #818cf8;
       border: 1px solid rgba(99,102,241,0.35); border-radius: 5px; cursor: pointer;
       transition: background 0.12s; margin-top: auto;
@@ -253,9 +254,9 @@
     <div id="quarter-modal" class="hidden" style="position:absolute;inset:0;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(5,8,20,0.88);backdrop-filter:blur(8px)">
       <div style="background:linear-gradient(145deg,#1a2a1a,#12201a);border:1.5px solid rgba(52,211,153,0.45);border-radius:18px;padding:32px 44px;text-align:center;max-width:300px;box-shadow:0 0 48px rgba(52,211,153,0.18),0 8px 32px rgba(0,0,0,0.6)">
         <div id="qm-emoji" style="margin-bottom:10px"></div>
-        <h2 id="qm-title" style="font-size:22px;font-weight:700;color:#34d399;margin-bottom:6px">Quarter 1 Complete!</h2>
+        <h2 id="qm-title" style="font-size:14px;font-family:'Press Start 2P',monospace;font-weight:700;color:#34d399;margin-bottom:10px;line-height:1.6">Quarter 1 Complete!</h2>
         <p id="qm-stats" style="font-size:13px;color:#6ee7b7;margin-bottom:22px;opacity:0.85">+75P bonus earned</p>
-        <button id="qm-continue" style="padding:11px 36px;font-size:14px;font-family:inherit;font-weight:700;background:#059669;color:#fff;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 24px rgba(5,150,105,0.5);transition:background 0.15s">Continue →</button>
+        <button id="qm-continue" style="padding:13px 28px;font-size:11px;font-family:'Press Start 2P',monospace;font-weight:700;background:#059669;color:#fff;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 24px rgba(5,150,105,0.5);transition:background 0.15s">Continue →</button>
       </div>
     </div>
   </div>
@@ -307,8 +308,8 @@
         </div>
       </div>
       <div style="display:flex;gap:5px;margin-top:5px;font-size:9px;color:#6b7280;text-align:center">
-        <span style="flex:1">Staff Designer</span>
-        <span style="flex:1">Design Manager</span>
+        <span style="flex:1;font-family:'Press Start 2P',monospace;font-size:7px">Staff Designer</span>
+        <span style="flex:1;font-family:'Press Start 2P',monospace;font-size:7px">Design Manager</span>
       </div>
     </div>
 
@@ -332,7 +333,7 @@
 </div>
 
 <div id="start-footer" class="hidden" style="margin-top:12px;display:flex;justify-content:center">
-  <button id="shop-start-btn" style="padding:11px 48px;font-size:14px;font-family:inherit;font-weight:700;background:#6366f1;color:#fff;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 20px rgba(99,102,241,0.45);transition:background 0.15s,transform 0.1s">Start Quarter 1</button>
+  <button id="shop-start-btn">Start Quarter 1</button>
 </div>
 
 <script>
@@ -1310,7 +1311,7 @@ function drawBossSprite(b) {
   ctx.fillRect(bx, by, bw * pct, 6);
   ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1;
   ctx.strokeRect(bx, by, bw, 6);
-  ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 9px monospace';
+  ctx.fillStyle = '#fbbf24'; ctx.font = "bold 8px 'Press Start 2P',monospace";
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   ctx.fillText(btype.label, b.x, by - 3);
   ctx.textAlign = 'left';
@@ -1412,7 +1413,7 @@ function draw() {
     // Remaining heal arc
     ctx.strokeStyle = '#34d399'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(0, 0, ds/2 + 4, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct); ctx.stroke();
-    ctx.fillStyle = '#34d399'; ctx.font = 'bold 7px monospace';
+    ctx.fillStyle = '#34d399'; ctx.font = "bold 7px 'Press Start 2P',monospace";
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
     ctx.fillText('HEAL', 0, ds/2 + 14);
     ctx.restore();
@@ -1438,7 +1439,7 @@ function draw() {
       ctx.fillText(boostIcons[item.type], 0, 1);
     }
     // Small label below
-    ctx.fillStyle = bc; ctx.font = 'bold 7px monospace';
+    ctx.fillStyle = bc; ctx.font = "bold 7px 'Press Start 2P',monospace";
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
     ctx.fillText(BOOST_LABELS[item.type], 0, ds/2 + 10);
     ctx.restore();
@@ -1470,7 +1471,7 @@ function draw() {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('😷', 0, 1);
     // Label
-    ctx.fillStyle = '#7DD3FC'; ctx.font = 'bold 7px monospace';
+    ctx.fillStyle = '#7DD3FC'; ctx.font = "bold 7px 'Press Start 2P',monospace";
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
     ctx.fillText('SICK DAY', 0, br + 14);
     ctx.restore();
@@ -1535,8 +1536,8 @@ function draw() {
   // ── Frozen overlay ──
   if (frozen) {
     ctx.fillStyle = 'rgba(56,189,248,0.08)'; ctx.fillRect(0, 0, WALL_X, H);
-    ctx.fillStyle = 'rgba(56,189,248,0.9)'; ctx.font = 'bold 15px Inter,monospace'; ctx.textAlign = 'center';
-    ctx.fillText(`❄ FROZEN  ${frozenTimer.toFixed(1)}s`, WALL_X/2, 40);
+    ctx.fillStyle = 'rgba(56,189,248,0.9)'; ctx.font = "bold 11px 'Press Start 2P',monospace"; ctx.textAlign = 'center';
+    ctx.fillText(`❄ FROZEN ${frozenTimer.toFixed(1)}s`, WALL_X/2, 40);
     ctx.textAlign = 'left';
   }
 
@@ -1552,22 +1553,22 @@ function draw() {
     roundRect(bx, by, bw * pct, bh, 10); ctx.fill();
     ctx.strokeStyle = color; ctx.lineWidth = 1.3;
     roundRect(bx, by, bw, bh, 10); ctx.stroke();
-    ctx.fillStyle = '#f8fafc'; ctx.font = 'bold 10px Inter,monospace';
+    ctx.fillStyle = '#f8fafc'; ctx.font = "bold 8px 'Press Start 2P',monospace";
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(`${label}  ${activeBoost.timer.toFixed(1)}s`, bx + bw/2, by + bh/2);
+    ctx.fillText(`${label} ${activeBoost.timer.toFixed(1)}s`, bx + bw/2, by + bh/2);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
   // ── Prep stage banner ──
   if (state === 'prep') {
-    const bw = 260, bh = 38, bx = WALL_X / 2 - bw / 2, by = 14;
+    const bw = WALL_X - 20, bh = 38, bx = WALL_X / 2 - bw / 2, by = 14;
     ctx.fillStyle = 'rgba(99,102,241,0.18)';
     roundRect(bx, by, bw, bh, 10); ctx.fill();
     ctx.strokeStyle = 'rgba(99,102,241,0.55)'; ctx.lineWidth = 1.2;
     roundRect(bx, by, bw, bh, 10); ctx.stroke();
-    ctx.fillStyle = '#a5b4fc'; ctx.font = 'bold 11px Inter,monospace';
+    ctx.fillStyle = '#a5b4fc'; ctx.font = "bold 8px 'Press Start 2P',monospace";
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('🛒  PREPARATION PHASE — spend & plan before battle', WALL_X / 2, by + bh / 2);
+    ctx.fillText('🛒 PREPARATION PHASE — SPEND & PLAN', WALL_X / 2, by + bh / 2);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
@@ -1581,8 +1582,8 @@ function draw() {
       drawDefender(mouseX, mouseY, 44, 12, 6, valid ? '#a78bfa' : '#ef4444', true);
     }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '10px Inter,monospace'; ctx.textAlign = 'center';
-    ctx.fillText(valid ? 'Click to place' : 'Left side only', mouseX, mouseY - 32);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = "8px 'Press Start 2P',monospace"; ctx.textAlign = 'center';
+    ctx.fillText(valid ? 'CLICK TO PLACE' : 'LEFT SIDE ONLY', mouseX, mouseY - 32);
     ctx.textAlign = 'left';
   }
 
@@ -1590,11 +1591,11 @@ function draw() {
   if (state === 'paused') {
     ctx.fillStyle = 'rgba(5,5,18,0.72)';
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#E3E3E3'; ctx.font = 'bold 28px Inter,monospace';
+    ctx.fillStyle = '#E3E3E3'; ctx.font = "bold 22px 'Press Start 2P',monospace";
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('⏸  PAUSED', W / 2, H / 2 - 16);
-    ctx.fillStyle = '#6b7280'; ctx.font = '13px Inter,monospace';
-    ctx.fillText('Press ESC to resume', W / 2, H / 2 + 20);
+    ctx.fillText('⏸ PAUSED', W / 2, H / 2 - 16);
+    ctx.fillStyle = '#6b7280'; ctx.font = "11px 'Press Start 2P',monospace";
+    ctx.fillText('PRESS ESC TO RESUME', W / 2, H / 2 + 24);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
