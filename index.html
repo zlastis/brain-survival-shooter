@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Brain Survival</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #191919;
@@ -15,6 +15,7 @@
       color: #E3E3E3;
       padding: 12px;
     }
+    .pixel { font-family: 'Press Start 2P', monospace !important; }
 
     /* ── HUD bar ── */
     #ui {
@@ -30,12 +31,13 @@
     #hp-bar-bg {
       width: 100%; height: 100%;
       background: rgba(255,255,255,0.08);
-      border-radius: 5px; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.25);
+      image-rendering: pixelated;
     }
     #hp-bar {
       height: 100%; width: 100%;
-      background: #34d399; border-radius: 5px;
+      background: #34d399; border-radius: 0;
       transition: width 0.1s, background 0.2s;
     }
     #hp-burnout-marker {
@@ -53,13 +55,13 @@
     #mental-bar-bg {
       width: 160px; height: 10px;
       background: rgba(255,255,255,0.08);
-      border-radius: 5px; overflow: hidden;
-      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 0; overflow: hidden;
+      border: 1px solid rgba(99,102,241,0.35);
       margin-top: 3px;
     }
     #mental-bar {
       height: 100%; width: 100%;
-      background: #818cf8; border-radius: 5px;
+      background: #818cf8; border-radius: 0;
       transition: width 0.08s, background 0.2s;
     }
     #mental-label { font-size: 9px; color: #6b7280; letter-spacing: 0.3px; margin-top: 1px; }
@@ -81,10 +83,11 @@
     .shop-section-promo-locked .promo-item { border-color: rgba(255,255,255,0.07) !important; }
     .shop-section-promo-locked .promo-item button { color: #4b5563 !important; border-color: rgba(255,255,255,0.07) !important; background: rgba(255,255,255,0.03) !important; cursor: not-allowed !important; }
     #promo-unlock-msg { font-size: 9px; color: #9B9A97; text-align: center; margin-top: 4px; line-height: 1.4; }
-    #ic-level-el { color: #fbbf24; font-weight: 700; font-size: 13px; }
-    .hud-label { color: #9B9A97; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
-    .hud-val   { font-weight: 700; font-size: 13px; }
-    #currency-el { color: #fbbf24; font-weight: 700; }
+    #ic-level-el { color: #fbbf24; font-family: 'Press Start 2P', monospace; font-size: 9px; }
+    .hud-label { color: #9B9A97; font-size: 8px; font-family: 'Press Start 2P', monospace; text-transform: uppercase; }
+    .hud-val   { font-family: 'Press Start 2P', monospace; font-size: 9px; }
+    #currency-el { color: #fbbf24; font-family: 'Press Start 2P', monospace; font-size: 9px; }
+    #countdown { font-family: 'Press Start 2P', monospace; font-size: 9px; color: #f87171; }
 
     /* ── Canvas area ── */
     #game-wrapper { display: flex; gap: 10px; align-items: flex-start; }
@@ -137,14 +140,14 @@
       padding: 12px; display: flex; flex-direction: column;
       gap: 0; overflow-y: auto; font-size: 12px;
     }
-    #hud-quarter-info { display: flex; flex-direction: column; gap: 1px; }
-    #hud-quarter-title { font-size: 15px; font-weight: 700; color: #fbbf24; }
-    #hud-quarter-sub   { color: #9B9A97; font-size: 11px; max-width: 180px; line-height: 1.3; }
+    #hud-quarter-info { display: flex; flex-direction: column; gap: 3px; }
+    #hud-quarter-title { font-family: 'Press Start 2P', monospace; font-size: 10px; color: #fbbf24; }
+    #hud-quarter-sub   { color: #9B9A97; font-size: 9px; max-width: 180px; line-height: 1.4; }
     #shop-footer { margin-top: auto; padding-top: 10px; }
     #shop-start-btn {
-      width: 100%; padding: 9px; font-size: 13px; font-family: inherit; font-weight: 700;
+      width: 100%; padding: 9px; font-size: 9px; font-family: 'Press Start 2P', monospace; font-weight: 700;
       background: #6366f1; color: #fff; border: none;
-      border-radius: 8px; cursor: pointer;
+      border-radius: 0; cursor: pointer;
       box-shadow: 0 0 14px rgba(99,102,241,0.35);
       transition: background 0.15s;
     }
@@ -193,6 +196,7 @@
     .color-barricade { color: #a78bfa; }
     .color-sick      { color: #7dd3fc; }
     .hidden { display: none !important; }
+    .pixel-icon { image-rendering: pixelated; vertical-align: middle; display: inline-block; }
   </style>
 </head>
 <body>
@@ -205,7 +209,7 @@
   <div id="hp-bar-wrap">
     <div style="display:flex;flex-direction:column;gap:0">
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:14px;line-height:1">❤️</span>
+        <span id="icon-hp" style="line-height:1"></span>
         <div id="hp-bar-outer">
           <div id="hp-bar-bg"><div id="hp-bar"></div></div>
           <div id="hp-burnout-marker"></div>
@@ -213,10 +217,10 @@
         <span id="hp-text" class="hud-val">100</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
-        <span style="font-size:14px;line-height:1">⚡</span>
+        <span id="icon-mental" style="line-height:1"></span>
         <div id="mental-bar-bg"><div id="mental-bar"></div></div>
       </div>
-      <span id="burnout-label" class="hidden">⚠ BURNOUT</span>
+      <span id="burnout-label" class="hidden"><span id="icon-burnout" style="line-height:1"></span> BURNOUT</span>
     </div>
   </div>
   <span><span class="hud-label">Level&nbsp;</span><span id="ic-level-el">IC1</span></span>
@@ -229,7 +233,7 @@
     <canvas id="c" width="800" height="560"></canvas>
     <div id="overlay">
       <div id="overlay-inner">
-        <h1 id="overlay-title">🧠 Brain Survival</h1>
+        <h1 id="overlay-title"><span id="icon-title-brain" style="line-height:1"></span> Brain Survival</h1>
         <p id="overlay-sub" style="max-width:340px;line-height:1.6;color:#9ca3af">You're a designer's brain. The corporate world wants you numb. Don't let it win.</p>
         <div id="overlay-rules" style="font-size:12px;color:#6b7280;max-width:320px;line-height:1.8;text-align:left">
           <div>1. Hold <b style="color:#c4b5fd">SPACE</b> to shoot — every shot costs Mental Capacity. Stop shooting to recover <span style="color:#4b5563">(revolutionary concept, we know).</span></div>
@@ -238,8 +242,8 @@
         </div>
         <div style="max-width:320px;width:100%;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;margin-top:2px">
           <div style="font-size:11px;color:#6b7280;line-height:1.8">
-            <div><span style="font-size:13px">❤️</span> <b style="color:#9ca3af">Health</b> — your actual will to live. Hits zero, you're out. Refilled by standing in recovery zones <span style="color:#4b5563">(rare, like real PTO).</span></div>
-            <div style="margin-top:4px"><span style="font-size:13px">⚡</span> <b style="color:#9ca3af">Mental Capacity</b> — your energy to keep shooting. Drains while firing, recovers when you stop. Basically your attention span during a status update.</div>
+            <div><span id="icon-legend-hp" style="line-height:1"></span> <b style="color:#9ca3af">Health</b> — your actual will to live. Hits zero, you're out. Refilled by standing in recovery zones <span style="color:#4b5563">(rare, like real PTO).</span></div>
+            <div style="margin-top:4px"><span id="icon-legend-mental" style="line-height:1"></span> <b style="color:#9ca3af">Mental Capacity</b> — your energy to keep shooting. Drains while firing, recovers when you stop. Basically your attention span during a status update.</div>
           </div>
         </div>
         <button id="start-btn">Start Game</button>
@@ -248,7 +252,7 @@
     </div>
     <div id="quarter-modal" class="hidden" style="position:absolute;inset:0;border-radius:4px;display:flex;align-items:center;justify-content:center;background:rgba(5,8,20,0.88);backdrop-filter:blur(8px)">
       <div style="background:linear-gradient(145deg,#1a2a1a,#12201a);border:1.5px solid rgba(52,211,153,0.45);border-radius:18px;padding:32px 44px;text-align:center;max-width:300px;box-shadow:0 0 48px rgba(52,211,153,0.18),0 8px 32px rgba(0,0,0,0.6)">
-        <div id="qm-emoji" style="font-size:44px;margin-bottom:10px">🎉</div>
+        <div id="qm-emoji" style="margin-bottom:10px"></div>
         <h2 id="qm-title" style="font-size:22px;font-weight:700;color:#34d399;margin-bottom:6px">Quarter 1 Complete!</h2>
         <p id="qm-stats" style="font-size:13px;color:#6ee7b7;margin-bottom:22px;opacity:0.85">+75P bonus earned</p>
         <button id="qm-continue" style="padding:11px 36px;font-size:14px;font-family:inherit;font-weight:700;background:#059669;color:#fff;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 24px rgba(5,150,105,0.5);transition:background 0.15s">Continue →</button>
@@ -265,19 +269,19 @@
       </div>
       <div class="shop-grid">
         <div class="shop-item">
-          <div class="item-icon">⚡</div>
+          <div class="item-icon" id="icon-item-firerate"></div>
           <div class="item-limit" id="level-fireRate">[0/3]</div>
           <div class="item-desc-small">Shoot faster each level.</div>
           <button id="buy-fireRate">Buy 80P</button>
         </div>
         <div class="shop-item">
-          <div class="item-icon">❤️</div>
+          <div class="item-icon" id="icon-item-maxhp"></div>
           <div class="item-limit" id="level-maxHp">[0/3]</div>
           <div class="item-desc-small">+25 max health per level.</div>
           <button id="buy-maxHp">Buy 60P</button>
         </div>
         <div class="shop-item">
-          <div class="item-icon">👟</div>
+          <div class="item-icon" id="icon-item-speed"></div>
           <div class="item-limit" id="level-moveSpeed">[0/3]</div>
           <div class="item-desc-small">Move faster each level.</div>
           <button id="buy-moveSpeed">Buy 70P</button>
@@ -292,12 +296,12 @@
       </div>
       <div class="shop-grid">
         <div class="shop-item">
-          <div class="item-icon color-tower">👤</div>
+          <div class="item-icon color-tower" id="icon-item-tower"></div>
           <div class="item-limit">50P · shoots</div>
           <button id="place-tower">Place 50P</button>
         </div>
         <div class="shop-item">
-          <div class="item-icon color-barricade">🗂️</div>
+          <div class="item-icon color-barricade" id="icon-item-barricade"></div>
           <div class="item-limit">80P · shoots fast</div>
           <button id="place-barricade">Place 80P</button>
         </div>
@@ -310,12 +314,12 @@
 
     <div id="shop-section-promo" class="shop-section shop-section-promo shop-section-promo-locked">
       <div class="shop-section-header">
-        <div class="shop-section-title" id="promo-title">🔒 Promotion</div>
+        <div class="shop-section-title" id="promo-title">Promotion</div>
         <div class="shop-section-subtitle" id="promo-subtitle">IC1 → IC2</div>
       </div>
       <div class="shop-grid">
         <div class="shop-item promo-item" style="grid-column:1/-1">
-          <div class="item-icon">🚀</div>
+          <div class="item-icon" id="icon-item-promo"></div>
           <div class="item-limit" id="promo-cost-text">350P</div>
           <div class="item-desc-small">Permanently boosts all stats. Your level carries forever.</div>
           <button id="buy-promo" disabled>Get Promoted</button>
@@ -340,6 +344,53 @@ const W = canvas.width, H = canvas.height;
 // ─── Asset preload ────────────────────────────────────────────────────────────
 const donutImg = new Image();
 donutImg.src = 'Doughnut.png';
+const bgImg = new Image();
+bgImg.src = 'bg_scaled.png';
+
+function loadImg(src) { const i = new Image(); i.src = src; return i; }
+function pad5(n) { return String(n).padStart(5, '0'); }
+
+// Player brain — directional sprites
+const brainImgs = {
+  w: loadImg('game/W.png'),
+  a: loadImg('game/A.png'),
+  s: loadImg('game/S.png'),
+  d: loadImg('game/D.png'),
+};
+
+// Enemies — laptop animation (8 frames)
+const laptopFrames = [0,1,2,3,4,5,6,7].map(i =>
+  loadImg(`game/Laptop/Laptop Animation_${pad5(i)}.png`));
+
+// Placed defenders — manager & designer support sprites (animated)
+const managerSupportFrames  = [0,1,2,3,4,5,6,7,8].map(i =>
+  loadImg(`game/Manager/Idle Animation Concept_${pad5(i)}.png`));
+const designerSupportFrames = [2,3,4,5,6,7,8].map(i =>
+  loadImg(`game/Staff designer/Pixel Art Animation-3_${pad5(i)}.png`));
+
+// Boss types — 3 rotating bosses
+const bossDAK7Frames    = [0,1,2,3,4,5,6,7,8].map(i =>
+  loadImg(`game/Dak7/Dumpster Fire Animation_${pad5(i)}.png`));
+const bossMeetingFrames = [8,9,10,11,12,13].map(i =>
+  loadImg(`game/C level meeting boss/Idle Meeting Animation_${pad5(i)}.png`));
+const bossPoliceFrames  = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(i =>
+  loadImg(`game/Design police/Idle Animation_${pad5(i)}.png`));
+const BOSS_TYPES = [
+  { frames: bossDAK7Frames,    w: 160, h: 160, hp: 600, label: '🔥 DAK7 ACTIVATED' },
+  { frames: bossMeetingFrames, w: 200, h: 160, hp: 500, label: '👔 C-LEVEL REVIEW' },
+  { frames: bossPoliceFrames,  w: 100, h: 150, hp: 450, label: '🚨 DESIGN POLICE' },
+];
+
+// Explosion frames (6)
+const explosionFrames = [82,83,84,85,86,87].map(i =>
+  loadImg(`game/Explotion/Game workshop_Seedance 2.0_2026-07-01_07-51-20_${pad5(i)}.png`));
+
+// Slack enemy frames (3 poses cycling)
+const slackFrames = [1,2,3].map(i => loadImg(`lovable-assets/slack-${i}.png`));
+
+// Pickup images
+const bananaImg = loadImg('lovable-assets/banana-pickup.png');
+const coffeeImg = loadImg('lovable-assets/coffee-pickup.png');
 
 // ─── UI refs ──────────────────────────────────────────────────────────────────
 const hpBar            = document.getElementById('hp-bar');
@@ -368,6 +419,142 @@ const promoSection     = document.getElementById('shop-section-promo');
 const promoSubtitle    = document.getElementById('promo-subtitle');
 const promoCostText    = document.getElementById('promo-cost-text');
 
+// ─── Pixel icon system (DOM icons — replaces emoji for a consistent retro look) ──
+function pixelIconSVG(grid, palette) {
+  const R = grid.length, C = grid[0].length;
+  let rects = '';
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
+      const v = grid[r][c]; if (!v) continue;
+      rects += `<rect x="${c}" y="${r}" width="1" height="1" fill="${palette[v]}"/>`;
+    }
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${C} ${R}">${rects}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+function iconImg(name, size, extraStyle = '') {
+  return `<img class="pixel-icon" src="${ICON_SRC[name]}" style="width:${size}px;height:${size}px;${extraStyle}">`;
+}
+
+const ICON_GRIDS = {
+  heart: { grid: [
+    [0,1,1,0,0,1,1,0],
+    [1,2,2,1,1,2,2,1],
+    [1,2,3,2,2,3,2,1],
+    [1,2,2,2,2,2,2,1],
+    [0,1,2,2,2,2,1,0],
+    [0,0,1,2,2,1,0,0],
+    [0,0,0,1,1,0,0,0],
+  ], palette: ['', '#7f1d1d', '#ef4444', '#fca5a5'] },
+  bolt: { grid: [
+    [0,0,0,1,1,0,0],
+    [0,0,1,2,1,0,0],
+    [0,1,2,1,0,0,0],
+    [1,2,1,0,0,0,0],
+    [0,1,1,1,1,0,0],
+    [0,0,0,1,2,1,0],
+    [0,0,0,0,1,2,1],
+    [0,0,0,0,0,1,1],
+  ], palette: ['', '#4338ca', '#818cf8'] },
+  warning: { grid: [
+    [0,0,1,1,0,0],
+    [0,1,2,2,1,0],
+    [1,2,2,2,2,1],
+    [1,2,3,3,2,1],
+    [1,2,2,2,2,1],
+    [1,2,3,3,2,1],
+    [1,1,1,1,1,1],
+  ], palette: ['', '#92400e', '#fbbf24', '#1f2937'] },
+  trophy: { grid: [
+    [0,1,1,1,1,1,0],
+    [0,1,2,2,2,1,0],
+    [1,1,2,2,2,1,1],
+    [0,0,1,2,1,0,0],
+    [0,0,1,1,1,0,0],
+    [0,1,1,1,1,1,0],
+    [0,0,1,1,1,0,0],
+  ], palette: ['', '#92400e', '#fbbf24'] },
+  lock: { grid: [
+    [0,1,1,1,1,0],
+    [0,1,0,0,1,0],
+    [1,1,1,1,1,1],
+    [1,2,2,2,2,1],
+    [1,2,1,1,2,1],
+    [1,2,2,2,2,1],
+    [1,1,1,1,1,1],
+  ], palette: ['', '#9ca3af', '#374151'] },
+  rocket: { grid: [
+    [0,0,1,1,0,0],
+    [0,1,2,2,1,0],
+    [0,1,2,2,1,0],
+    [1,1,2,2,1,1],
+    [1,3,2,2,3,1],
+    [0,1,1,1,1,0],
+    [0,1,0,1,0,0],
+  ], palette: ['', '#dc2626', '#e5e7eb', '#f97316'] },
+  party: { grid: [
+    [0,0,1,0,0,0,2,0,0],
+    [0,0,0,0,3,0,0,0,0],
+    [1,0,0,0,0,0,0,0,2],
+    [0,0,0,4,4,0,0,0,0],
+    [0,3,0,4,5,4,0,1,0],
+    [0,0,0,4,4,0,0,0,0],
+    [2,0,0,0,0,0,0,0,3],
+    [0,0,0,0,1,0,0,0,0],
+    [0,1,0,0,0,0,2,0,0],
+  ], palette: ['', '#f87171', '#60a5fa', '#fbbf24', '#e5e7eb', '#34d399'] },
+  shoe: { grid: [
+    [0,0,1,1,1,0,0],
+    [0,1,2,2,2,1,0],
+    [1,2,2,2,2,2,1],
+    [1,1,1,1,1,1,1],
+    [0,3,3,3,3,3,0],
+  ], palette: ['', '#374151', '#e5e7eb', '#1f2937'] },
+  folder: { grid: [
+    [1,1,0,0,0,0],
+    [1,2,2,2,2,1],
+    [1,2,2,2,2,1],
+    [1,2,2,2,2,1],
+    [1,1,1,1,1,1],
+  ], palette: ['', '#581c87', '#a78bfa'] },
+  person: { grid: [
+    [0,0,1,1,1,1,0,0],
+    [0,0,1,2,2,1,0,0],
+    [0,0,1,1,1,1,0,0],
+    [0,1,1,1,1,1,1,0],
+    [0,1,1,1,1,1,1,0],
+    [0,1,1,1,1,1,1,0],
+    [0,0,1,0,0,1,0,0],
+    [0,0,1,0,0,1,0,0],
+  ], palette: ['', '#34d399', '#052e16'] },
+  brain: { grid: [
+    [0,0,2,2,2,2,2,2,0,0],
+    [0,2,3,1,1,1,1,3,2,0],
+    [2,1,1,2,1,1,2,1,1,2],
+    [2,1,1,1,1,1,1,1,1,2],
+    [2,1,2,1,1,1,1,2,1,2],
+    [0,2,1,1,2,2,1,1,2,0],
+    [0,0,2,1,1,1,1,2,0,0],
+    [0,0,0,2,2,2,2,0,0,0],
+  ], palette: ['', '#E87090', '#A03055', '#F8A0C0'] },
+};
+const ICON_SRC = {};
+for (const name in ICON_GRIDS) ICON_SRC[name] = pixelIconSVG(ICON_GRIDS[name].grid, ICON_GRIDS[name].palette);
+
+document.getElementById('icon-hp').innerHTML             = iconImg('heart', 16);
+document.getElementById('icon-mental').innerHTML         = iconImg('bolt', 16);
+document.getElementById('icon-burnout').innerHTML        = iconImg('warning', 10);
+document.getElementById('icon-title-brain').innerHTML    = iconImg('brain', 26);
+document.getElementById('icon-legend-hp').innerHTML      = iconImg('heart', 13);
+document.getElementById('icon-legend-mental').innerHTML  = iconImg('bolt', 13);
+document.getElementById('qm-emoji').innerHTML            = iconImg('party', 40);
+document.getElementById('icon-item-firerate').innerHTML  = iconImg('bolt', 20);
+document.getElementById('icon-item-maxhp').innerHTML     = iconImg('heart', 20);
+document.getElementById('icon-item-speed').innerHTML     = iconImg('shoe', 20);
+document.getElementById('icon-item-tower').innerHTML     = iconImg('person', 20);
+document.getElementById('icon-item-barricade').innerHTML = iconImg('folder', 20);
+document.getElementById('icon-item-promo').innerHTML     = iconImg('rocket', 20);
+
 // ─── Boost / refill constants ─────────────────────────────────────────────────
 const BOOST_DURATION  = 10.0;
 const BOOST_COLORS    = { gun: '#f59e0b', shield: '#38bdf8', speed: '#fb923c' };
@@ -382,17 +569,17 @@ const BASE_SPEED        = 220;
 const BASE_MAX_HP       = 100;
 const BASE_SHOOT        = 0.28;
 const PLAYER_RADIUS     = 15.4;
-const ENEMY_SIZE        = 20;
+const ENEMY_SIZE        = 28;
 const ENEMY_BASE_SPD    = 90;
 const BULLET_SPEED      = 380;
 const BULLET_RADIUS     = 5;
 const CONTACT_DMG       = 20;
 const CONTACT_CD        = 1.0;
 
-const WALL_X            = 580;
-const QUARTER_ENEMY_COUNT = 100;
-const SPAWN_RATE_START  = 1.8;
-const SPAWN_RATE_END    = 0.25;
+const WALL_X            = 538;
+const QUARTER_DURATION  = 45;  // seconds survival phase
+const SPAWN_RATE_START  = 2.0;
+const SPAWN_RATE_END    = 0.35;
 const PREP_SPAWN_INT    = 1.5;
 
 const CURRENCY_START    = 250;
@@ -416,10 +603,10 @@ const SICK_DAY_DURATION = 4.0;
 
 // Static map obstacles — furniture that blocks enemies and bullets
 const MAP_OBSTACLES = [
-  { x: 120,          y: 280, w: 140, h: 48 },  // player desk
-  { x: WALL_X + 90,  y: 120, w: 80,  h: 30 },  // staging table 1
-  { x: WALL_X + 165, y: 340, w: 80,  h: 30 },  // staging table 2
-  { x: WALL_X + 75,  y: 460, w: 80,  h: 30 },  // staging table 3
+  { x: 116,         y: 269, w: 140, h: 48 },  // player desk
+  { x: WALL_X + 65, y: 169, w: 80,  h: 30 },  // staging table 1
+  { x: WALL_X + 65, y: 295, w: 80,  h: 30 },  // staging table 2
+  { x: WALL_X + 65, y: 420, w: 80,  h: 30 },  // staging table 3
 ];
 const SICK_DAY_MAP_LIFETIME = 8.0;   // seconds before it vanishes
 const SICK_DAY_MAP_INTERVAL = 28000; // ms between spawns
@@ -445,6 +632,10 @@ let player, enemies, bullets, particles, towers, barricades;
 let refillZones, boostItems, activeBoost, sickDayMapItems;
 let kills, currency, quarter;
 let enemiesSpawned, quarterKills;
+let boss = null;
+let bossSpawned = false;
+let explosions = [];
+let quarterTimer = 0;
 let tempUpgrades, icLevel, mentalCap;
 let frozenTimer;
 let lastEnemy, lastShot, nextRefillAt, nextBoostAt, nextSickDayAt;
@@ -471,6 +662,7 @@ function resetField() {
   sickDayMapItems = [];
   nextSickDayAt   = 0;
   enemiesSpawned = 0; quarterKills = 0;
+  boss = null; bossSpawned = false; explosions = []; quarterTimer = QUARTER_DURATION;
   lastEnemy = 0; lastShot = 0;
   nextRefillAt = 0; nextBoostAt = 0;
   placementMode = null; canvas.style.cursor = 'default';
@@ -490,7 +682,8 @@ function spawnInStaging(released) {
     x, y, size: ENEMY_SIZE,
     speed: ENEMY_BASE_SPD + (quarter - 1) * 15,
     hitTimer: 0, defHitTimer: 0, released,
-    variant: Math.floor(Math.random() * 4), // visual only
+    variant: Math.floor(Math.random() * 2), // 0=laptop, 1=slack
+    frameOffset: Math.floor(Math.random() * 9),
   });
 }
 
@@ -611,14 +804,24 @@ function updateRunning(dt, ts) {
 
   if (activeBoost) { activeBoost.timer -= dt; if (activeBoost.timer <= 0) activeBoost = null; }
 
-  const progress = Math.min(1, enemiesSpawned / QUARTER_ENEMY_COUNT);
-  const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
-  if (enemiesSpawned < QUARTER_ENEMY_COUNT && ts - lastEnemy > spawnInterval * 1000) {
-    spawnInStaging(true); enemiesSpawned++; lastEnemy = ts;
+  // Count down survival timer
+  if (!bossSpawned) quarterTimer = Math.max(0, quarterTimer - dt);
+
+  // Spawn enemies during survival phase
+  if (!bossSpawned) {
+    const progress = 1 - quarterTimer / QUARTER_DURATION;
+    const spawnInterval = SPAWN_RATE_START + (SPAWN_RATE_END - SPAWN_RATE_START) * progress;
+    if (ts - lastEnemy > spawnInterval * 1000) {
+      spawnInStaging(true); enemiesSpawned++; lastEnemy = ts;
+    }
   }
 
-  // Round ends when all enemies have spawned and been killed
-  if (enemiesSpawned >= QUARTER_ENEMY_COUNT && enemies.length === 0) { endQuarter(); return; }
+  // When survival timer ends, spawn boss
+  if (quarterTimer <= 0 && !bossSpawned) {
+    spawnBoss(); bossSpawned = true;
+  }
+  // Boss defeated → end quarter
+  if (bossSpawned && !boss) { endQuarter(); return; }
 
   if (ts > nextRefillAt && refillZones.length < REFILL_MAX && player && player.hp < getMaxHp() * 0.5) {
     spawnRefillZone(); nextRefillAt = ts + 10000 + Math.random() * 5000;
@@ -676,7 +879,8 @@ function updateRunning(dt, ts) {
   if (keys['Space'] && mentalCap > 0) {
     mentalCap = Math.max(0, mentalCap - MENTAL_DRAIN * dt);
     if (ts - lastShot > getShootInt() * 1000) {
-      const b = shootAt(player.x, player.y, enemies.filter(e => e.released), BULLET_SPEED);
+      const targets = [...enemies.filter(e => e.released), ...(boss ? [boss] : [])];
+      const b = shootAt(player.x, player.y, targets, BULLET_SPEED);
       if (b) { b.fromPlayer = true; bullets.push(b); }
       lastShot = ts;
     }
@@ -721,7 +925,7 @@ function updateRunning(dt, ts) {
       const e = enemies[j];
       if (!e.released) continue;
       if (Math.abs(b.x - e.x) < e.size && Math.abs(b.y - e.y) < e.size) {
-        burst(e.x, e.y, '#ef4444', 10);
+        addExplosion(e.x, e.y, 50);
         enemies.splice(j, 1);
         kills++; quarterKills++;
         if (b.fromPlayer) currency += CURRENCY_PER_KILL;
@@ -779,8 +983,101 @@ function updateRunning(dt, ts) {
     }
   }
 
+  // ── Boss update ──
+  if (boss) {
+    const ba = Math.atan2(player.y - boss.y, player.x - boss.x);
+    const bnx = boss.x + Math.cos(ba) * boss.speed * dt;
+    const bny = boss.y + Math.sin(ba) * boss.speed * dt;
+    // Boss can cross WALL_X after being released
+    boss.x = Math.max(boss.size, Math.min(W - boss.size, bnx));
+    boss.y = Math.max(boss.size + MAP_WALL_H, Math.min(H - boss.size, bny));
+    if (boss.hitTimer > 0) boss.hitTimer -= dt;
+
+    // Boss shoots spread at player
+    if (ts - boss.lastShot > 1200) {
+      for (let ang = -0.3; ang <= 0.31; ang += 0.3) {
+        const a2 = ba + ang;
+        bullets.push({ x: boss.x, y: boss.y, vx: Math.cos(a2)*BULLET_SPEED*0.7, vy: Math.sin(a2)*BULLET_SPEED*0.7, r: BULLET_RADIUS, fromBoss: true });
+      }
+      boss.lastShot = ts;
+    }
+
+    // Boss contact damage
+    if (Math.hypot(boss.x - player.x, boss.y - player.y) < boss.size + player.r - 4 && player.contactTimer <= 0) {
+      if (activeBoost && activeBoost.type === 'shield') {
+        boss.hp -= 60; boss.hitTimer = 0.12;
+      } else {
+        player.hp = Math.max(0, player.hp - CONTACT_DMG * 2);
+        player.contactTimer = CONTACT_CD;
+        burst(player.x, player.y, '#ef4444', 8);
+        if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
+      }
+      updateHUD();
+    }
+
+    // Bullet hits boss
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b2 = bullets[i];
+      if (b2.fromBoss) continue;
+      if (Math.hypot(b2.x - boss.x, b2.y - boss.y) < boss.size + b2.r) {
+        boss.hp -= 10;
+        boss.hitTimer = 0.1;
+        if (b2.fromPlayer) currency += 8;
+        bullets.splice(i, 1);
+        if (boss.hp <= 0) {
+          addExplosion(boss.x, boss.y, 120);
+          burst(boss.x, boss.y, '#f59e0b', 20);
+          kills++; quarterKills++;
+          if (b2.fromPlayer) currency += 200;
+          boss = null;
+          updateHUD();
+          break;
+        }
+      }
+    }
+
+    // Boss bullets hit player
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b2 = bullets[i];
+      if (!b2.fromBoss) continue;
+      if (Math.hypot(b2.x - player.x, b2.y - player.y) < b2.r + player.r) {
+        if (player.contactTimer <= 0) {
+          player.hp = Math.max(0, player.hp - 12);
+          player.contactTimer = 0.3;
+          burst(player.x, player.y, '#ef4444', 4);
+          if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
+          updateHUD();
+        }
+        bullets.splice(i, 1);
+      }
+    }
+  }
+
+  // ── Explosion ticks ──
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    explosions[i].elapsed += dt;
+    if (explosions[i].elapsed > 0.6) explosions.splice(i, 1);
+  }
+
   tickParticles(dt);
   updateHUD();
+}
+
+function spawnBoss() {
+  const btype = BOSS_TYPES[(quarter - 1) % BOSS_TYPES.length];
+  const hp = btype.hp + quarter * 80;
+  boss = {
+    x: WALL_X + 160, y: H / 2,
+    size: Math.max(btype.w, btype.h) / 2,
+    hp, maxHp: hp,
+    speed: ENEMY_BASE_SPD * 0.5,
+    lastShot: performance.now(), hitTimer: 0,
+    typeIndex: (quarter - 1) % BOSS_TYPES.length,
+  };
+}
+
+function addExplosion(x, y, size = 60) {
+  explosions.push({ x, y, size, elapsed: 0 });
 }
 
 function moveEnemyToPlayer(e, dt) {
@@ -804,6 +1101,53 @@ function tickParticles(dt) {
     p.x += p.vx * dt; p.y += p.vy * dt;
     p.vx *= 0.92; p.vy *= 0.92;
   }
+}
+
+// ─── Map drawing helpers ──────────────────────────────────────────────────────
+const MAP_WALL_H = 60; // top wall strip height
+
+function drawDesk(cx, cy, w, h) {
+  ctx.fillStyle = '#3E1F08'; ctx.fillRect(cx - w/2 + 3, cy - h/2 + 4, w, h); // shadow
+  ctx.fillStyle = '#7A4820'; ctx.fillRect(cx - w/2, cy - h/2, w, h);          // surface
+  ctx.fillStyle = '#A06030'; ctx.fillRect(cx - w/2, cy - h/2, w, 4);           // top edge
+  ctx.fillStyle = '#5C3414'; ctx.fillRect(cx - w/2, cy - h/2 + 4, 3, h - 4);  // left edge
+  ctx.fillStyle = '#5C3414'; ctx.fillRect(cx + w/2 - 14, cy - h/2 + 8, 12, h - 14); // drawer
+  ctx.fillStyle = '#C8906A'; ctx.fillRect(cx + w/2 - 10, cy, 4, 3);            // drawer handle
+}
+
+function drawChair(cx, cy) {
+  ctx.fillStyle = '#2A2A2A'; ctx.fillRect(cx - 6, cy - 10, 12, 5);  // back
+  ctx.fillStyle = '#3C3C3C'; ctx.fillRect(cx - 8, cy - 6, 16, 14);  // seat
+  ctx.fillStyle = '#222';
+  ctx.fillRect(cx - 7, cy + 8, 4, 5); ctx.fillRect(cx + 3, cy + 8, 4, 5); // legs
+  ctx.fillRect(cx - 6, cy - 14, 2, 6); ctx.fillRect(cx + 4, cy - 14, 2, 6); // back posts
+}
+
+function drawPlant(cx, cy) {
+  ctx.fillStyle = '#7A4A20'; ctx.fillRect(cx - 10, cy + 4, 20, 14);  // pot
+  ctx.fillStyle = '#9A6030'; ctx.fillRect(cx - 10, cy + 4, 20, 4);   // pot rim
+  ctx.fillStyle = '#226622'; ctx.fillRect(cx - 4, cy - 12, 8, 18);   // stem
+  ctx.fillStyle = '#2A8A2A'; ctx.fillRect(cx - 12, cy - 8, 10, 10);  // left leaf
+  ctx.fillStyle = '#2A8A2A'; ctx.fillRect(cx + 2, cy - 8, 10, 10);   // right leaf
+  ctx.fillStyle = '#38A838'; ctx.fillRect(cx - 8, cy - 16, 16, 10);  // top leaves
+}
+
+function drawClock(cx, cy) {
+  ctx.fillStyle = '#888'; ctx.fillRect(cx - 12, cy - 12, 24, 24);  // frame
+  ctx.fillStyle = '#EEE'; ctx.fillRect(cx - 10, cy - 10, 20, 20);  // face
+  ctx.fillStyle = '#333';
+  ctx.fillRect(cx - 1, cy - 8, 2, 9);   // hour hand (pointing ~10 o'clock)
+  ctx.fillRect(cx, cy - 1, 7, 2);        // minute hand
+  ctx.fillRect(cx - 1, cy - 1, 2, 2);   // pivot
+}
+
+function drawWaterCooler(cx, cy) {
+  ctx.fillStyle = '#A0B8CC'; ctx.fillRect(cx - 14, cy, 28, 52);       // body
+  ctx.fillStyle = '#5090C0'; ctx.fillRect(cx - 11, cy + 4, 22, 26);   // tank
+  ctx.fillStyle = '#C8E0F0'; ctx.fillRect(cx - 11, cy + 4, 22, 4);    // tank top
+  ctx.fillStyle = '#C04040'; ctx.fillRect(cx - 9, cy + 34, 8, 6);     // hot tap
+  ctx.fillStyle = '#4070C0'; ctx.fillRect(cx + 1, cy + 34, 8, 6);     // cold tap
+  ctx.fillStyle = '#808CA0'; ctx.fillRect(cx - 12, cy + 46, 24, 6);   // base
 }
 
 // ─── Draw helpers ─────────────────────────────────────────────────────────────
@@ -870,163 +1214,166 @@ const PERSON_SP = [
   [0,0,4,0,0,4,0,0],
 ];
 
-function drawBrain(x, y, r, flash, hasShield, facingAngle = Math.PI / 2) {
+function drawBrain(x, y, r, flash, hasShield, facingAngle = 0) {
+  // Pick directional sprite from angle
+  const a = facingAngle;
+  let dirImg;
+  if      (a > -Math.PI/4  && a <= Math.PI/4)  dirImg = brainImgs.d; // right
+  else if (a > Math.PI/4   && a <= 3*Math.PI/4) dirImg = brainImgs.s; // down
+  else if (a > -3*Math.PI/4 && a <= -Math.PI/4) dirImg = brainImgs.w; // up
+  else                                           dirImg = brainImgs.a; // left
+
+  const sw = 50, sh = 50;
   ctx.save();
   ctx.translate(Math.floor(x), Math.floor(y));
-  ctx.imageSmoothingEnabled = false;
-  const sc = 2;
+  ctx.imageSmoothingEnabled = true;
 
-  // Shield pixel ring
+  // Shield ring
   if (hasShield) {
     ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
-    const sr = r + 10;
-    ctx.strokeRect(-sr, -sr, sr*2, sr*2);
+    ctx.beginPath(); ctx.arc(0, 0, r + 14, 0, Math.PI * 2); ctx.stroke();
   }
 
   // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.22)';
-  ctx.fillRect(-r + 3, -r + 4 + r * 0.6, r * 2, r * 0.5);
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(2, sh/2 - 4, sw/2 - 4, 5, 0, 0, Math.PI * 2); ctx.fill();
 
-  // Brain sprite
-  const pal = flash
-    ? ['','#FDA4AF','#be185d','#fecdd3']
-    : BRAIN_CLR;
-  pixelSprite(0, 0, sc, BRAIN_SP, pal);
+  // Flash tint overlay
+  if (flash) { ctx.globalAlpha = 0.45; ctx.fillStyle = '#FDA4AF'; ctx.beginPath(); ctx.arc(0, 0, r + 4, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
 
-  // Eyes — two white pixels with dark pupils
-  const eyeY = Math.floor(r * 0.1);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(-4, eyeY, 3, 3);
-  ctx.fillRect(2, eyeY, 3, 3);
-  ctx.fillStyle = '#1e1b4b';
-  ctx.fillRect(-3, eyeY + 1, 2, 2);
-  ctx.fillRect(3, eyeY + 1, 2, 2);
+  if (dirImg && dirImg.complete && dirImg.naturalWidth > 0) {
+    ctx.drawImage(dirImg, -sw/2, -sh/2, sw, sh);
+  } else {
+    ctx.fillStyle = flash ? '#FDA4AF' : '#E87090';
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  }
 
-  ctx.imageSmoothingEnabled = true;
   ctx.restore();
 }
 
 function drawEnemy(e, frozen) {
+  let img, sw, sh;
+  if (e.variant === 1) {
+    // Slack — 3-frame animation
+    const fi = (Math.floor(drawTime / 300) + (e.frameOffset || 0)) % slackFrames.length;
+    img = slackFrames[fi];
+    sw = 66; sh = 57;
+  } else {
+    // Laptop — 8-frame animation
+    const fi = (Math.floor(drawTime / 130) + (e.frameOffset || 0)) % laptopFrames.length;
+    img = laptopFrames[fi];
+    sw = 66; sh = 57; // 50% bigger than original 44×38
+  }
+
   ctx.save();
   ctx.translate(Math.floor(e.x), Math.floor(e.y));
-  ctx.imageSmoothingEnabled = false;
-  const sc = 3;
-  const v = e.variant % 3;
-
-  // Screen colors per variant
-  const screenClr = frozen ? '#22d3ee'
-    : (v === 0 ? '#611F69' : v === 1 ? '#1A73E8' : '#E8E4D8');
-  const accentClr = frozen ? '#7dd3fc'
-    : (v === 0 ? '#E01E5A' : v === 1 ? '#34A853' : '#37352F');
-
-  const pal = ['', '#2A2825', screenClr, '#6B5A40', '#1A1816'];
-  pixelSprite(0, -2, sc, LAPTOP_SP, pal);
-
-  // Accent dot (notification / camera / icon) top-right of screen
-  ctx.fillStyle = accentClr;
-  ctx.fillRect(sc * 4 - sc/2, -(sc * LAPTOP_SP.length / 2) - 1, sc, sc);
-
-  // HP bar drawn outside (by caller)
   ctx.imageSmoothingEnabled = true;
-  ctx.restore();
 
-  // HP bar
-  const bw = e.size * 2;
-  drawHpBar(e.x, e.y - e.size - 6, bw, e.hp, e.maxHp, frozen ? '#22d3ee' : '#34d399');
+  if (frozen) { ctx.globalAlpha = 0.75; ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(0, 0, sw/2, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1; }
+
+  if (img && img.complete && img.naturalWidth > 0) {
+    if (e.hitTimer > 0) ctx.globalAlpha = 0.45;
+    ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle = '#4A4A8A'; ctx.beginPath(); ctx.arc(0, 0, e.size, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.restore();
 }
 
-function drawDefender(x, y, tableW, tableH, personR, color) {
+function drawBossSprite(b) {
+  const btype = BOSS_TYPES[b.typeIndex];
+  const fi = Math.floor(drawTime / 180) % btype.frames.length;
+  const img = btype.frames[fi];
+  const sw = btype.w, sh = btype.h;
+
+  ctx.save();
+  ctx.translate(Math.floor(b.x), Math.floor(b.y));
+  ctx.imageSmoothingEnabled = true;
+  if (b.hitTimer > 0) ctx.globalAlpha = 0.45;
+  if (img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
+  } else {
+    ctx.fillStyle = '#7c3aed'; ctx.fillRect(-b.size, -b.size, b.size*2, b.size*2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Boss HP bar — wide, prominent
+  const bw = 180;
+  const bx = b.x - bw/2, by = b.y - b.size - 14;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx - 2, by - 2, bw + 4, 10);
+  ctx.fillStyle = '#1f2937'; ctx.fillRect(bx, by, bw, 6);
+  const pct = b.hp / b.maxHp;
+  ctx.fillStyle = pct > 0.5 ? '#f59e0b' : pct > 0.25 ? '#ef4444' : '#dc2626';
+  ctx.fillRect(bx, by, bw * pct, 6);
+  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1;
+  ctx.strokeRect(bx, by, bw, 6);
+  ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(btype.label, b.x, by - 3);
+  ctx.textAlign = 'left';
+}
+
+function drawDefender(x, y, tableW, tableH, personR, color, isManager) {
+  const frames = isManager ? managerSupportFrames : designerSupportFrames;
+  const fi = Math.floor(drawTime / 150) % frames.length;
+  const img = frames[fi];
+  const sw = 36, sh = 54;
   ctx.save();
   ctx.translate(Math.floor(x), Math.floor(y));
-  ctx.imageSmoothingEnabled = false;
-  const sc = 2;
-  // Pixel desk surface
-  const dw = tableW + 4, dh = tableH + 4;
-  ctx.fillStyle = '#8B6340';
-  ctx.fillRect(-dw/2 - 1, -dh/2 - 1, dw + 2, dh + 2);
-  ctx.fillStyle = '#A87850';
-  ctx.fillRect(-dw/2, -dh/2, dw, dh);
-  // Pixel person above desk
-  const personPal = ['', '#D4A870', color, '#F0C898', '#8B6040'];
-  pixelSprite(0, -(dh/2) - personR - 2, sc, PERSON_SP, personPal);
-  // Label
-  ctx.fillStyle = color;
-  ctx.font = 'bold 7px monospace';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText(tableW > 40 ? 'D.MGR' : 'DSGN', 0, dh/2 + 11);
   ctx.imageSmoothingEnabled = true;
+  if (img && img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
+  } else {
+    ctx.fillStyle = color;
+    ctx.fillRect(-personR, -personR, personR*2, personR*2);
+  }
+  // Color ring to distinguish type
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, sh/2 + 6, 6, 0, Math.PI*2); ctx.stroke();
   ctx.restore();
 }
 
 function drawMapFurniture() {
   ctx.imageSmoothingEnabled = false;
 
-  // ── Player desk — pixel art setup at left-center ──
-  const dx = 120, dy = 280, dw = 140, dh = 48;
-  // Desk surface
-  ctx.fillStyle = '#7A5530';
-  ctx.fillRect(dx - dw/2 - 2, dy - dh/2 + 2, dw + 4, dh + 2); // shadow
-  ctx.fillStyle = '#9A6A3A';
-  ctx.fillRect(dx - dw/2, dy - dh/2, dw, dh);
-  ctx.fillStyle = '#B07840';
-  ctx.fillRect(dx - dw/2, dy - dh/2, dw, 4); // front edge highlight
-  // Monitor
-  const mx = dx - 18, my = dy - dh/2;
-  ctx.fillStyle = '#222';
-  ctx.fillRect(mx - 16, my - 30, 32, 26); // bezel
-  ctx.fillStyle = '#4F46E5';
-  ctx.fillRect(mx - 13, my - 27, 26, 20); // screen
-  ctx.fillStyle = '#818cf8'; ctx.globalAlpha = 0.6;
-  ctx.fillRect(mx - 13, my - 27, 8, 5); // screen highlight
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = '#444';
-  ctx.fillRect(mx - 3, my - 4, 6, 4); // stand neck
-  ctx.fillRect(mx - 8, my, 16, 3); // stand base
-  // Keyboard
-  ctx.fillStyle = '#37352F';
-  ctx.fillRect(dx + 8, dy - 6, 34, 12); // keyboard body
-  ctx.fillStyle = '#4A4640';
-  for (let ki = 0; ki < 5; ki++) ctx.fillRect(dx + 10 + ki * 6, dy - 4, 5, 4); // key row 1
-  for (let ki = 0; ki < 5; ki++) ctx.fillRect(dx + 10 + ki * 6, dy + 2, 5, 4); // key row 2
-  // Coffee mug
-  ctx.fillStyle = '#E8E0D0';
-  ctx.fillRect(dx - 50, dy - 12, 12, 14);
-  ctx.fillStyle = '#C87040';
-  ctx.fillRect(dx - 50, dy - 12, 12, 4); // rim
-  ctx.fillStyle = '#6B4226';
-  ctx.fillRect(dx - 47, dy - 8, 6, 6); // coffee inside
-  // Books on left side
-  const bookColors = ['#C04030','#3060B0','#208050'];
-  for (let bi = 0; bi < 3; bi++) {
-    ctx.fillStyle = bookColors[bi];
-    ctx.fillRect(dx - dw/2 + 4 + bi * 8, dy - dh/2 - 18, 6, 18);
-  }
+  // ── Player zone: scattered desks ──
+  drawDesk(281, 155, 82, 40); drawChair(281, 185);
+  drawDesk(388, 290, 66, 48); drawChair(388, 324);
+  drawDesk(228, 368, 86, 40); drawChair(228, 398);
+  drawDesk(341, 424, 86, 40); drawChair(341, 454);
 
-  // ── Staging tables — pixel art enemy desks ──
-  const stagingTables = [
-    { x: WALL_X + 90,  y: 120 },
-    { x: WALL_X + 165, y: 340 },
-    { x: WALL_X + 75,  y: 460 },
-  ];
-  for (const t of stagingTables) {
-    const tw = 80, th = 30;
-    // Desk shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    ctx.fillRect(t.x - tw/2 + 2, t.y - th/2 + 3, tw, th);
-    // Desk surface
-    ctx.fillStyle = '#6A5030';
-    ctx.fillRect(t.x - tw/2, t.y - th/2, tw, th);
-    ctx.fillStyle = '#8A6840';
-    ctx.fillRect(t.x - tw/2, t.y - th/2, tw, 4); // front edge
-    // Laptop on desk
-    const lw = 28, lh = 12;
-    ctx.fillStyle = '#2A2825';
-    ctx.fillRect(t.x - lw/2, t.y - lh/2, lw, lh); // base
-    ctx.fillStyle = '#1A1816';
-    ctx.fillRect(t.x - lw/2 + 2, t.y - lh/2 - 18, lw - 4, 18); // screen
-    ctx.fillStyle = '#4F46E5'; ctx.globalAlpha = 0.7;
-    ctx.fillRect(t.x - lw/2 + 4, t.y - lh/2 - 16, lw - 10, 13); // screen content
-    ctx.globalAlpha = 1;
+  // ── Player desk (main) ──
+  const dx = 116, dy = 269, dw = 130, dh = 44;
+  drawDesk(dx, dy, dw, dh);
+  // Monitor
+  ctx.fillStyle = '#222'; ctx.fillRect(dx - 26, dy - dh/2 - 28, 32, 26);
+  ctx.fillStyle = '#4F46E5'; ctx.fillRect(dx - 23, dy - dh/2 - 25, 26, 20);
+  ctx.fillStyle = '#818cf8'; ctx.globalAlpha = 0.5; ctx.fillRect(dx - 23, dy - dh/2 - 25, 8, 5); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#444'; ctx.fillRect(dx - 11, dy - dh/2 - 2, 6, 4); ctx.fillRect(dx - 16, dy - dh/2 + 2, 16, 3);
+  // Keyboard
+  ctx.fillStyle = '#37352F'; ctx.fillRect(dx + 14, dy - 5, 30, 10);
+  ctx.fillStyle = '#4A4640';
+  for (let k = 0; k < 4; k++) { ctx.fillRect(dx + 16 + k*6, dy - 3, 5, 3); ctx.fillRect(dx + 16 + k*6, dy + 2, 5, 3); }
+  // Books
+  ['#C04030','#3060B0','#208050'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(dx - dw/2 + 4 + i*8, dy - dh/2 - 16, 6, 16); });
+  // Chair
+  drawChair(dx - 40, dy + 4);
+
+  // ── Staging zone: cubicle grid ──
+  const cX0 = WALL_X + 35, cY0 = MAP_WALL_H + 48, colW = 58, rowH = 150;
+  const cols = Math.floor((W - cX0 - 10) / colW);
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < cols; col++) {
+      const cx = cX0 + col * colW + 22, cy = cY0 + row * rowH;
+      // Cubicle shelf/divider
+      ctx.fillStyle = '#B0B0C0'; ctx.fillRect(cx - 26, cy - 10, 52, 5);
+      ctx.fillStyle = '#C8C8D8'; ctx.fillRect(cx - 26, cy - 10, 52, 2);
+      drawDesk(cx, cy + 18, 48, 28);
+      drawChair(cx, cy + 56);
+    }
   }
 
   ctx.imageSmoothingEnabled = true;
@@ -1041,219 +1388,105 @@ function drawHpBar(cx, y, w, hp, maxHp, color) {
 
 // ─── Draw ─────────────────────────────────────────────────────────────────────
 function draw() {
-  // ── Background: pixel-art office floor ──
-  ctx.imageSmoothingEnabled = false;
-  const TILE = 32;
-  for (let tx = 0; tx < W; tx += TILE) {
-    for (let ty = 0; ty < H; ty += TILE) {
-      const alt = ((Math.floor(tx / TILE) + Math.floor(ty / TILE)) % 2 === 0);
-      ctx.fillStyle = alt ? '#C8A87A' : '#B49060';
-      ctx.fillRect(tx, ty, TILE, TILE);
-    }
+  // ── Background ──
+  ctx.imageSmoothingEnabled = true;
+  if (bgImg.complete && bgImg.naturalWidth > 0) {
+    ctx.drawImage(bgImg, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#F0EDE0'; ctx.fillRect(0, 0, W, H);
   }
-  // Hard pixel grout lines
-  ctx.fillStyle = '#8A6030';
-  for (let x = 0; x <= W; x += TILE) ctx.fillRect(x, 0, 1, H);
-  for (let y = 0; y <= H; y += TILE) ctx.fillRect(0, y, W, 1);
 
-  // Staging zone tint
-  ctx.fillStyle = 'rgba(60,20,70,0.25)'; ctx.fillRect(WALL_X, 0, W - WALL_X, H);
-  ctx.imageSmoothingEnabled = true;
-
-  // ── Map furniture (desks, laptops) ──
-  drawMapFurniture();
-
-  // ── Static pixel art environment dressing ──
-  ctx.imageSmoothingEnabled = false;
-  // Potted plant — top-left
-  ctx.fillStyle = '#5A3810'; ctx.fillRect(18, 12, 20, 16); // pot
-  ctx.fillStyle = '#6A4820'; ctx.fillRect(18, 12, 20, 4); // pot rim
-  ctx.fillStyle = '#2D6A2D'; ctx.fillRect(22, 2, 8, 12); // stem
-  ctx.fillStyle = '#3A8A3A'; ctx.fillRect(16, 4, 10, 8); ctx.fillRect(26, 4, 10, 8); // leaves
-  ctx.fillStyle = '#4AAA4A'; ctx.fillRect(20, 2, 12, 6); // top leaves
-  // Water cooler — bottom-left
-  ctx.fillStyle = '#C8D8E8'; ctx.fillRect(12, H - 66, 28, 48); // body
-  ctx.fillStyle = '#A0B8CC'; ctx.fillRect(12, H - 66, 28, 4); // top
-  ctx.fillStyle = '#5090C0'; ctx.fillRect(16, H - 60, 20, 24); // tank (blue water)
-  ctx.fillStyle = '#E0EAF0'; ctx.fillRect(16, H - 60, 20, 4); // tank top
-  ctx.fillStyle = '#C04040'; ctx.fillRect(16, H - 32, 8, 6); // hot tap
-  ctx.fillStyle = '#4070C0'; ctx.fillRect(24, H - 32, 8, 6); // cold tap
-  ctx.fillStyle = '#8A9AA8'; ctx.fillRect(14, H - 18, 24, 6); // legs platform
-  // Filing cabinet — mid-left
-  ctx.fillStyle = '#7A8090'; ctx.fillRect(8, 180, 32, 56); // body
-  ctx.fillStyle = '#909AA8'; ctx.fillRect(8, 180, 32, 4); // top
-  ctx.fillStyle = '#5A6070'; ctx.fillRect(8, 208, 32, 2); // drawer divider
-  ctx.fillStyle = '#B0B8C0'; ctx.fillRect(18, 192, 12, 4); // top handle
-  ctx.fillStyle = '#B0B8C0'; ctx.fillRect(18, 218, 12, 4); // bottom handle
-  ctx.imageSmoothingEnabled = true;
-
-  // ── Pixel-art cubicle divider wall with door ──
-  ctx.imageSmoothingEnabled = false;
-  const wallW = 16, wallLeft = WALL_X - wallW / 2;
-  const doorH = 72, doorY = H / 2 - doorH / 2;
-
-  function drawWallSegment(y1, y2) {
-    // Main panel
-    ctx.fillStyle = '#9A9088'; ctx.fillRect(wallLeft, y1, wallW, y2 - y1);
-    // Highlight left edge
-    ctx.fillStyle = '#B8B0A8'; ctx.fillRect(wallLeft, y1, 2, y2 - y1);
-    // Shadow right edge
-    ctx.fillStyle = '#6A6460'; ctx.fillRect(wallLeft + wallW - 2, y1, 2, y2 - y1);
-    // Horizontal rails every 40px
-    ctx.fillStyle = '#ADA8A0';
-    for (let sy = Math.ceil(y1 / 40) * 40; sy < y2; sy += 40) {
-      ctx.fillRect(wallLeft, sy, wallW, 2);
-    }
-  }
-  drawWallSegment(0, doorY);
-  drawWallSegment(doorY + doorH, H);
-
-  // Door frame — dark wood pixel trim
-  ctx.fillStyle = '#5A4020';
-  ctx.fillRect(wallLeft - 4, doorY - 4, wallW + 8, 4);   // lintel
-  ctx.fillRect(wallLeft - 4, doorY + doorH, wallW + 8, 4); // sill
-  ctx.fillRect(wallLeft - 4, doorY, 5, doorH);             // left jamb
-  ctx.fillRect(wallLeft + wallW - 1, doorY, 5, doorH);     // right jamb
-
-  // Staging badge
-  const bx = WALL_X + (W - WALL_X) / 2;
-  ctx.fillStyle = '#3A1040';
-  ctx.fillRect(bx - 30, 7, 60, 15);
-  ctx.fillStyle = '#C890D0';
-  ctx.fillRect(bx - 28, 9, 56, 11);
-  ctx.fillStyle = '#3A1040';
-  ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('STAGING', bx, 15);
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.imageSmoothingEnabled = true;
-
-  // ── Refill zones — pixel art cross orb ──
-  ctx.imageSmoothingEnabled = false;
+  // ── Refill zones ──
   for (const z of refillZones) {
     const pct = z.healLeft / z.totalHeal;
-    const r = z.r;
-    // Outer dashed bounding box (pixel art style)
-    ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
-    ctx.strokeRect(z.x - r - 4, z.y - r - 4, (r + 4) * 2, (r + 4) * 2);
-    ctx.setLineDash([]);
-    // Dark backing square
-    ctx.fillStyle = 'rgba(8,30,18,0.85)';
-    ctx.fillRect(z.x - r, z.y - r, r * 2, r * 2);
-    // Pixel cross (green plus sign)
-    const arm = Math.floor(r * 0.5);
-    ctx.fillStyle = '#34d399';
-    ctx.fillRect(z.x - arm, z.y - r + 2, arm * 2, r * 2 - 4);  // vertical
-    ctx.fillRect(z.x - r + 2, z.y - arm, r * 2 - 4, arm * 2);  // horizontal
-    ctx.fillStyle = '#6ee7b7';
-    ctx.fillRect(z.x - arm + 2, z.y - arm + 2, (arm - 2) * 2, (arm - 2) * 2); // center highlight
-    // Pixel border
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-    ctx.strokeRect(z.x - r, z.y - r, r * 2, r * 2);
-    // Label
-    ctx.fillStyle = '#34d399'; ctx.font = 'bold 7px monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('COFFEE', z.x, z.y + r + 11);
-    ctx.textAlign = 'left';
-  }
-  ctx.imageSmoothingEnabled = true;
-
-  // ── Boost items — pixel art pickup diamonds ──
-  ctx.imageSmoothingEnabled = false;
-  const boostIcons  = { gun: '⚡', shield: '🛡', speed: '💨' };
-  const boostShapes = { gun: '#F59E0B', shield: '#38BDF8', speed: '#4ADE80' };
-  for (const item of boostItems) {
-    const bc = boostShapes[item.type];
-    const pulse = 0.85 + 0.15 * Math.sin(drawTime * 0.004);
-    const br = Math.floor(item.r * 1.4 * pulse);
+    const ds = z.r * 3;
     ctx.save();
-    ctx.translate(Math.floor(item.x), Math.floor(item.y));
-    // Dashed border square
-    ctx.strokeStyle = bc; ctx.lineWidth = 1; ctx.setLineDash([3,2]);
-    ctx.strokeRect(-br - 3, -br - 3, (br + 3) * 2, (br + 3) * 2);
-    ctx.setLineDash([]);
-    // Dark backing
-    ctx.fillStyle = 'rgba(8,8,22,0.88)';
-    ctx.fillRect(-br, -br, br * 2, br * 2);
-    // Colored border
-    ctx.strokeStyle = bc; ctx.lineWidth = 1;
-    ctx.strokeRect(-br, -br, br * 2, br * 2);
-    // White pixel ring highlight (corners)
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillRect(-br, -br, 2, 2);
-    ctx.fillRect(br - 2, -br, 2, 2);
-    ctx.fillRect(-br, br - 2, 2, 2);
-    ctx.fillRect(br - 2, br - 2, 2, 2);
-    // Icon (emoji or sprite)
-    if (item.type === 'speed' && donutImg.complete && donutImg.naturalWidth > 0) {
-      ctx.imageSmoothingEnabled = true;
-      const ds = br * 1.8;
-      ctx.drawImage(donutImg, -ds / 2, -ds / 2, ds, ds);
-      ctx.imageSmoothingEnabled = false;
+    ctx.translate(Math.floor(z.x), Math.floor(z.y));
+    ctx.imageSmoothingEnabled = true;
+    if (coffeeImg.complete && coffeeImg.naturalWidth > 0) {
+      ctx.drawImage(coffeeImg, -ds/2, -ds/2, ds, ds);
     } else {
-      ctx.font = `${item.r * 1.3}px serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(boostIcons[item.type], 0, 1);
+      ctx.font = `${ds*0.6}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('☕', 0, 1);
     }
-    // Label
-    ctx.fillStyle = bc; ctx.font = 'bold 7px monospace';
+    // Remaining heal arc
+    ctx.strokeStyle = '#34d399'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, ds/2 + 4, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct); ctx.stroke();
+    ctx.fillStyle = '#34d399'; ctx.font = 'bold 7px monospace';
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
-    ctx.fillText(BOOST_LABELS[item.type], 0, br + 11);
+    ctx.fillText('HEAL', 0, ds/2 + 14);
     ctx.restore();
     ctx.textBaseline = 'alphabetic';
   }
-  ctx.imageSmoothingEnabled = true;
 
-  // ── Sick Day map items — pixel art pickup ──
-  ctx.imageSmoothingEnabled = false;
+  // ── Boost items — clean pickups, no aura ──
+  const boostIcons  = { gun: '⚡', shield: '🛡', speed: '🍌' };
+  const boostShapes = { gun: '#F59E0B', shield: '#38BDF8', speed: '#4ADE80' };
+  const pickupImgs  = { gun: coffeeImg, speed: bananaImg };
+  for (const item of boostItems) {
+    const bc = boostShapes[item.type];
+    const ds = item.r * 3; // 50% bigger: base r=12 → 36px draw size
+    ctx.save();
+    ctx.translate(Math.floor(item.x), Math.floor(item.y));
+    ctx.imageSmoothingEnabled = true;
+    const pImg = pickupImgs[item.type];
+    if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+      ctx.drawImage(pImg, -ds/2, -ds/2, ds, ds);
+    } else {
+      ctx.font = `${ds * 0.7}px serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(boostIcons[item.type], 0, 1);
+    }
+    // Small label below
+    ctx.fillStyle = bc; ctx.font = 'bold 7px monospace';
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+    ctx.fillText(BOOST_LABELS[item.type], 0, ds/2 + 10);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // ── Sick Day map items — circle aura pickup ──
   for (const sd of sickDayMapItems) {
     const pct = sd.timeLeft / SICK_DAY_MAP_LIFETIME;
     ctx.save();
     ctx.translate(Math.floor(sd.x), Math.floor(sd.y));
     ctx.globalAlpha = Math.min(1, pct * 3);
-    const br = sd.r;
-    // Dashed border
-    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1; ctx.setLineDash([3,2]);
-    ctx.strokeRect(-br - 3, -br - 3, (br + 3) * 2, (br + 3) * 2);
-    ctx.setLineDash([]);
+    const br = sd.r * 1.3;
+    // Outer glow
+    ctx.strokeStyle = '#38BDF855'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(0, 0, br + 5, 0, Math.PI * 2); ctx.stroke();
     // Dark backing
-    ctx.fillStyle = 'rgba(8,8,22,0.88)';
-    ctx.fillRect(-br, -br, br * 2, br * 2);
-    // Pixel border
-    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1;
-    ctx.strokeRect(-br, -br, br * 2, br * 2);
-    // Corner highlights
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillRect(-br, -br, 2, 2); ctx.fillRect(br-2, -br, 2, 2);
-    ctx.fillRect(-br, br-2, 2, 2); ctx.fillRect(br-2, br-2, 2, 2);
+    ctx.fillStyle = 'rgba(8,8,22,0.82)';
+    ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
+    // Colored border
+    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.stroke();
+    // Timer arc
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, br + 7, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct); ctx.stroke();
     // Icon
+    ctx.imageSmoothingEnabled = true;
     ctx.font = `${sd.r * 1.1}px serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('😷', 0, 1);
-    // Timer dashed outline progress
-    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 2;
-    ctx.setLineDash([Math.floor((br * 8 * pct)), 999]);
-    ctx.strokeRect(-br - 4, -br - 4, (br + 4) * 2, (br + 4) * 2);
-    ctx.setLineDash([]);
     // Label
     ctx.fillStyle = '#7DD3FC'; ctx.font = 'bold 7px monospace';
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
-    ctx.fillText('SICK DAY', 0, br + 11);
+    ctx.fillText('SICK DAY', 0, br + 14);
     ctx.restore();
     ctx.textBaseline = 'alphabetic';
   }
-  ctx.imageSmoothingEnabled = true;
 
   // ── Design Managers (barricades) ──
   for (const b of barricades) {
-    drawDefender(b.x, b.y, 44, 12, 6, '#a78bfa');
-    drawHpBar(b.x, b.y - 26, 44, b.hp, b.maxHp, '#a78bfa');
+    drawDefender(b.x, b.y, 44, 12, 6, '#a78bfa', true);
+    drawHpBar(b.x, b.y - 34, 44, b.hp, b.maxHp, '#a78bfa');
   }
 
   // ── Staff Designers (towers) ──
   for (const t of towers) {
-    drawDefender(t.x, t.y, 30, 9, 5, '#34d399');
-    drawHpBar(t.x, t.y - 22, 30, t.hp, t.maxHp, '#34d399');
+    drawDefender(t.x, t.y, 30, 9, 5, '#34d399', false);
+    drawHpBar(t.x, t.y - 34, 30, t.hp, t.maxHp, '#34d399');
   }
 
   // ── Particles ──
@@ -1267,6 +1500,23 @@ function draw() {
   // ── Enemies ──
   const frozen = frozenTimer > 0;
   for (const e of enemies) { drawEnemy(e, frozen && e.released); }
+
+  // ── Boss ──
+  if (boss) drawBossSprite(boss);
+
+  // ── Explosions ──
+  for (const ex of explosions) {
+    const fi = Math.min(explosionFrames.length - 1, Math.floor(ex.elapsed / 0.6 * explosionFrames.length));
+    const img = explosionFrames[fi];
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.save();
+      ctx.globalAlpha = 1 - ex.elapsed / 0.6;
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, ex.x - ex.size/2, ex.y - ex.size/2, ex.size, ex.size);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+  }
 
   // ── Bullets — pixel squares ──
   ctx.imageSmoothingEnabled = false;
@@ -1326,9 +1576,9 @@ function draw() {
     const valid = mouseX < WALL_X - 30 && mouseX > 10 && mouseY > 10 && mouseY < H - 10;
     ctx.globalAlpha = 0.45;
     if (placementMode === 'tower') {
-      drawDefender(mouseX, mouseY, 30, 9, 5, valid ? '#34d399' : '#ef4444');
+      drawDefender(mouseX, mouseY, 30, 9, 5, valid ? '#34d399' : '#ef4444', false);
     } else {
-      drawDefender(mouseX, mouseY, 44, 12, 6, valid ? '#a78bfa' : '#ef4444');
+      drawDefender(mouseX, mouseY, 44, 12, 6, valid ? '#a78bfa' : '#ef4444', true);
     }
     ctx.globalAlpha = 1;
     ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '10px Inter,monospace'; ctx.textAlign = 'center';
@@ -1348,13 +1598,19 @@ function draw() {
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
 
-  // ── Kill progress bar ──
+  // ── Survival / boss progress bar ──
   if (state === 'running') {
-    const pct = Math.min(1, quarterKills / QUARTER_ENEMY_COUNT);
     const bw = WALL_X - 20;
     ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(10, H - 9, bw, 5);
-    ctx.fillStyle = '#34d399';
-    ctx.fillRect(10, H - 9, bw * pct, 5);
+    if (boss) {
+      const pct = boss.hp / boss.maxHp;
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(10, H - 9, bw * (1 - pct), 5);
+    } else {
+      const pct = 1 - quarterTimer / QUARTER_DURATION;
+      ctx.fillStyle = '#818cf8';
+      ctx.fillRect(10, H - 9, bw * pct, 5);
+    }
   }
 }
 
@@ -1374,7 +1630,8 @@ function updateHUD() {
   currencyEl.textContent = currency + 'P';
   if (state === 'running') {
     timerWrap.classList.remove('hidden');
-    countdown.textContent = quarterKills + ' / ' + QUARTER_ENEMY_COUNT;
+    if (boss || bossSpawned) countdown.innerHTML = iconImg('warning', 10, 'margin-right:3px') + 'BOSS';
+    else countdown.textContent = Math.ceil(quarterTimer) + 's';
   } else {
     timerWrap.classList.add('hidden');
   }
@@ -1414,7 +1671,7 @@ function updateShop() {
   if (promoEligible) {
     const cost = getPromoCost(icLevel);
     promoSection.classList.remove('shop-section-promo-locked');
-    promoTitleEl.textContent = '🏆 Promotion Available';
+    promoTitleEl.innerHTML = iconImg('trophy', 12, 'margin-right:3px') + 'Promotion Available';
     promoSubtitle.textContent = `${getIcTitle(icLevel)} → ${getIcTitle(icLevel + 1)}`;
     promoCostText.textContent = `${cost}P · permanent`;
     promoBtn.textContent = `Promote ${cost}P`;
@@ -1423,7 +1680,7 @@ function updateShop() {
   } else {
     promoSection.classList.add('shop-section-promo-locked');
     const quartersLeft = 4 - ((quarter - 1) % 4);
-    promoTitleEl.textContent = '🔒 Promotion';
+    promoTitleEl.innerHTML = iconImg('lock', 12, 'margin-right:3px') + 'Promotion';
     promoSubtitle.textContent = `${getIcTitle(icLevel)} → ${getIcTitle(icLevel + 1)}`;
     promoCostText.textContent = `${getPromoCost(icLevel)}P · permanent`;
     promoBtn.textContent = 'Locked';
@@ -1467,10 +1724,12 @@ function startQuarter() {
 function endQuarter() {
   state = 'prep';
   requireSpaceRelease = true;
-  enemies = []; bullets = []; // clear immediately so no last-frame damage
-  if (player) player.contactTimer = CONTACT_CD; // block any pending contact hit
-  qmTitle.textContent = `Quarter ${quarter} Complete! 🎉`;
-  qmStats.textContent = `+${CURRENCY_Q_BONUS}P bonus · ${kills} total kills`;
+  enemies = []; bullets = [];
+  if (player) player.contactTimer = CONTACT_CD;
+  const hpBonus = player ? Math.floor((player.hp / getMaxHp()) * 60) : 0;
+  currency += hpBonus;
+  qmTitle.textContent = `Quarter ${quarter} Complete!`;
+  qmStats.textContent = `+${CURRENCY_Q_BONUS}P bonus · +${hpBonus}P health bonus · ${kills} kills`;
   quarterModal.classList.remove('hidden');
 }
 
@@ -1490,7 +1749,7 @@ function showDeadScreen() {
   quarterModal.classList.add('hidden');
   overlay.classList.remove('hidden');
   overlay.classList.add('dead-state');
-  overlayTitle.textContent = '🧠 Your Brain Died';
+  overlayTitle.innerHTML = iconImg('brain', 26, 'margin-right:4px') + 'Your Brain Died';
   overlaySub.textContent = `Survived to Quarter ${quarter} · ${kills} kills. The meetings won.`;
   document.getElementById('overlay-rules').classList.add('hidden');
   document.querySelector('#overlay-inner > div[style*="border-top"]').style.display = 'none';
