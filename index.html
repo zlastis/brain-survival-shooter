@@ -337,6 +337,10 @@ const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 
+// ─── Asset preload ────────────────────────────────────────────────────────────
+const donutImg = new Image();
+donutImg.src = 'Doughnut.png';
+
 // ─── UI refs ──────────────────────────────────────────────────────────────────
 const hpBar            = document.getElementById('hp-bar');
 const hpText           = document.getElementById('hp-text');
@@ -740,12 +744,12 @@ function updateRunning(dt, ts) {
         if (player.contactTimer <= 0) {
           if (activeBoost && activeBoost.type === 'shield') {
             burst(player.x, player.y, '#38bdf8', 6);
-            enemies.splice(i, 1); player.contactTimer = CONTACT_CD; continue;
+            enemies.splice(i, 1); kills++; quarterKills++; player.contactTimer = CONTACT_CD; continue;
           }
           player.hp = Math.max(0, player.hp - CONTACT_DMG);
           player.contactTimer = CONTACT_CD;
           burst(player.x, player.y, '#ef4444', 6);
-          enemies.splice(i, 1); updateHUD();
+          enemies.splice(i, 1); kills++; quarterKills++; updateHUD();
           if (player.hp === 0) { state = 'dead'; showDeadScreen(); return; }
           continue;
         }
@@ -814,239 +818,191 @@ function roundRect(x, y, w, h, r) {
   ctx.closePath();
 }
 
+function pixelSprite(cx, cy, sc, grid, pal) {
+  const R = grid.length, C = grid[0].length;
+  const ox = Math.floor(cx - C * sc / 2);
+  const oy = Math.floor(cy - R * sc / 2);
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
+      const ci = grid[r][c]; if (!ci) continue;
+      ctx.fillStyle = pal[ci];
+      ctx.fillRect(ox + c * sc, oy + r * sc, sc, sc);
+    }
+  }
+}
+
+// Brain sprite (12×10, scale 2)
+const BRAIN_SP = [
+  [0,0,2,2,2,2,2,2,2,2,0,0],
+  [0,2,3,1,1,1,1,1,1,3,2,0],
+  [2,1,3,1,2,1,1,2,1,3,1,2],
+  [2,1,1,2,1,2,2,1,2,1,1,2],
+  [2,1,1,1,1,1,1,1,1,1,1,2],
+  [2,1,2,1,1,1,1,1,1,2,1,2],
+  [2,1,1,1,2,1,1,2,1,1,1,2],
+  [0,2,1,1,1,2,2,1,1,1,2,0],
+  [0,0,2,1,1,1,1,1,1,2,0,0],
+  [0,0,0,2,2,2,2,2,2,0,0,0],
+];
+const BRAIN_CLR = ['','#E87090','#A03055','#F8A0C0'];
+
+// Laptop enemy sprite (10×7, palette injected)
+const LAPTOP_SP = [
+  [0,1,1,1,1,1,1,1,1,0],
+  [0,1,4,4,4,4,4,4,1,0],
+  [0,1,4,2,2,2,2,4,1,0],
+  [0,1,4,2,2,2,2,4,1,0],
+  [0,1,1,1,1,1,1,1,1,0],
+  [0,0,3,3,3,3,3,3,0,0],
+  [1,1,1,1,1,1,1,1,1,1],
+];
+// Person sprite (8×10, scale 2)
+const PERSON_SP = [
+  [0,0,1,1,1,1,0,0],
+  [0,0,1,3,3,1,0,0],
+  [0,0,1,3,3,1,0,0],
+  [0,0,1,1,1,1,0,0],
+  [0,2,2,2,2,2,2,0],
+  [0,2,2,2,2,2,2,0],
+  [0,2,2,2,2,2,2,0],
+  [0,0,2,2,2,2,0,0],
+  [0,0,4,0,0,4,0,0],
+  [0,0,4,0,0,4,0,0],
+];
+
 function drawBrain(x, y, r, flash, hasShield, facingAngle = Math.PI / 2) {
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(facingAngle - Math.PI / 2);
-  const br = r * 1.15;
+  ctx.translate(Math.floor(x), Math.floor(y));
+  ctx.imageSmoothingEnabled = false;
+  const sc = 2;
 
-  // Shield ring
+  // Shield pixel ring
   if (hasShield) {
-    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 18;
-    ctx.beginPath(); ctx.arc(0, 0, br + 11, 0, Math.PI * 2); ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
+    const sr = r + 10;
+    ctx.strokeRect(-sr, -sr, sr*2, sr*2);
   }
 
-  // Drop shadow — offset ellipse cast on the floor beneath
-  ctx.fillStyle = 'rgba(100,75,5,0.32)';
-  ctx.beginPath();
-  ctx.ellipse(br * 0.18, br * 0.55, br * 0.82, br * 0.32, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(-r + 3, -r + 4 + r * 0.6, r * 2, r * 0.5);
 
-  // Brain hemispheres
-  ctx.shadowColor = '#be185d'; ctx.shadowBlur = flash ? 20 : 8;
-  const fill = flash ? '#fda4af' : '#f9a8d4';
-  ctx.fillStyle = fill;
-  ctx.beginPath(); ctx.ellipse(-br*0.13, -br*0.04, br*0.68, br*0.78, -0.08, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(br*0.13, -br*0.04, br*0.68, br*0.78, 0.08, 0, Math.PI*2); ctx.fill();
-  ctx.shadowBlur = 0;
+  // Brain sprite
+  const pal = flash
+    ? ['','#FDA4AF','#be185d','#fecdd3']
+    : BRAIN_CLR;
+  pixelSprite(0, 0, sc, BRAIN_SP, pal);
 
-  // Folds
-  ctx.strokeStyle = 'rgba(157,23,77,0.42)'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(0, -br*0.62); ctx.bezierCurveTo(-br*0.07, -br*0.18, br*0.07, br*0.18, 0, br*0.62); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-br*0.44, -br*0.32); ctx.quadraticCurveTo(-br*0.7, br*0.04, -br*0.42, br*0.34); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(br*0.44, -br*0.32); ctx.quadraticCurveTo(br*0.7, br*0.04, br*0.42, br*0.34); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-br*0.32, -br*0.56); ctx.quadraticCurveTo(0, -br*0.8, br*0.32, -br*0.56); ctx.stroke();
-
-  // Overhead fluorescent highlight (top-left catch-light)
-  ctx.fillStyle = 'rgba(255,255,255,0.28)';
-  ctx.beginPath();
-  ctx.ellipse(-br * 0.2, -br * 0.36, br * 0.36, br * 0.2, -0.55, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Eyes
-  const ey = br * 0.17;
+  // Eyes — two white pixels with dark pupils
+  const eyeY = Math.floor(r * 0.1);
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-br*0.21, ey, br*0.115, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(br*0.21, ey, br*0.115, 0, Math.PI*2); ctx.fill();
+  ctx.fillRect(-4, eyeY, 3, 3);
+  ctx.fillRect(2, eyeY, 3, 3);
   ctx.fillStyle = '#1e1b4b';
-  ctx.beginPath(); ctx.arc(-br*0.21, ey+br*0.02, br*0.065, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(br*0.21, ey+br*0.02, br*0.065, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-br*0.18, ey-br*0.01, br*0.025, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(br*0.24, ey-br*0.01, br*0.025, 0, Math.PI*2); ctx.fill();
+  ctx.fillRect(-3, eyeY + 1, 2, 2);
+  ctx.fillRect(3, eyeY + 1, 2, 2);
 
+  ctx.imageSmoothingEnabled = true;
   ctx.restore();
 }
 
 function drawEnemy(e, frozen) {
   ctx.save();
-  ctx.translate(e.x, e.y);
-  const s = e.size;
-  const w = s * 1.9, h = s * 1.5;
-  const ice = frozen;
-
+  ctx.translate(Math.floor(e.x), Math.floor(e.y));
+  ctx.imageSmoothingEnabled = false;
+  const sc = 3;
   const v = e.variant % 3;
 
-  if (v === 0) {
-    // ── Slack chat bubble (Design Corrections) ──
-    const bg     = ice ? '#1A2840' : '#4A154B';
-    const lines  = ice ? '#7dd3fc' : '#C9A8C9';
+  // Screen colors per variant
+  const screenClr = frozen ? '#22d3ee'
+    : (v === 0 ? '#611F69' : v === 1 ? '#1A73E8' : '#E8E4D8');
+  const accentClr = frozen ? '#7dd3fc'
+    : (v === 0 ? '#E01E5A' : v === 1 ? '#34A853' : '#37352F');
 
-    // Bubble body
-    ctx.fillStyle = bg;
-    roundRect(-w/2, -h/2, w, h, 7); ctx.fill();
+  const pal = ['', '#2A2825', screenClr, '#6B5A40', '#1A1816'];
+  pixelSprite(0, -2, sc, LAPTOP_SP, pal);
 
-    // Bubble tail — bottom-left
-    ctx.beginPath();
-    ctx.moveTo(-w/2 + 4, h/2);
-    ctx.lineTo(-w/2 - 6, h/2 + 7);
-    ctx.lineTo(-w/2 + 13, h/2);
-    ctx.closePath(); ctx.fill();
+  // Accent dot (notification / camera / icon) top-right of screen
+  ctx.fillStyle = accentClr;
+  ctx.fillRect(sc * 4 - sc/2, -(sc * LAPTOP_SP.length / 2) - 1, sc, sc);
 
-    // Message lines
-    ctx.fillStyle = lines;
-    const lh2 = s * 0.11, lx = -w * 0.33;
-    ctx.fillRect(lx, -h * 0.22,        w * 0.66, lh2);
-    ctx.fillRect(lx, -h * 0.22 + s*0.22, w * 0.44, lh2);
-
-    // Unread notification dot
-    if (!ice) {
-      ctx.fillStyle = '#E01E5A';
-      ctx.beginPath(); ctx.arc(w/2 - 4, -h/2 + 5, 4.5, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = `bold 6px Inter,monospace`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('3', w/2 - 4, -h/2 + 5.5);
-    }
-
-  } else if (v === 1) {
-    // ── Google Meet video tile (Corporate Meeting) ──
-    const bg         = ice ? '#0F1E2F' : '#202124';
-    const avatarFill = ice ? '#22d3ee'  : '#1A73E8';
-    const nameColor  = ice ? '#7dd3fc'  : '#A8C7FA';
-
-    // Tile bg
-    ctx.fillStyle = bg;
-    roundRect(-w/2, -h/2, w, h, 5); ctx.fill();
-    ctx.strokeStyle = ice ? 'rgba(34,211,238,0.3)' : 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 1;
-    roundRect(-w/2, -h/2, w, h, 5); ctx.stroke();
-
-    // Avatar head + shoulders
-    ctx.fillStyle = avatarFill;
-    ctx.beginPath(); ctx.arc(0, -h*0.08, h*0.23, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(0, h*0.38, h*0.30, Math.PI, 0); ctx.fill();
-
-    // Bottom name strip
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(-w/2 + 1, h/2 - 10, w - 2, 9);
-    ctx.fillStyle = nameColor;
-    ctx.font = `600 ${s * 0.17}px Inter,monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('You', 0, h/2 - 5.5);
-
-    // Recording dot
-    if (!ice) {
-      ctx.fillStyle = '#00897B';
-      ctx.beginPath(); ctx.arc(w/2 - 5, -h/2 + 5, 3, 0, Math.PI*2); ctx.fill();
-    }
-
-  } else {
-    // ── Notion spreadsheet fragment (Quarterly Planning) ──
-    const bg        = ice ? '#1A2840' : '#F7F6F3';
-    const headerBg  = ice ? '#243050' : '#E8E8E4';
-    const gridColor = ice ? 'rgba(125,211,252,0.25)' : 'rgba(55,53,47,0.2)';
-    const textColor = ice ? '#7dd3fc' : '#37352F';
-
-    // Page bg
-    ctx.fillStyle = bg;
-    roundRect(-w/2, -h/2, w, h, 4); ctx.fill();
-
-    // Header row
-    ctx.fillStyle = headerBg;
-    ctx.fillRect(-w/2, -h/2, w, h * 0.28);
-
-    // Grid lines — vertical (3 cols)
-    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.8;
-    for (let c = 1; c < 3; c++) {
-      const gx = -w/2 + (w / 3) * c;
-      ctx.beginPath(); ctx.moveTo(gx, -h/2); ctx.lineTo(gx, h/2); ctx.stroke();
-    }
-    // Grid lines — horizontal (4 rows)
-    for (let r = 1; r < 4; r++) {
-      const gy = -h/2 + (h / 4) * r;
-      ctx.beginPath(); ctx.moveTo(-w/2, gy); ctx.lineTo(w/2, gy); ctx.stroke();
-    }
-
-    // Header label
-    ctx.fillStyle = textColor;
-    ctx.font = `bold ${s * 0.15}px Inter,monospace`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Q4 Plan', 0, -h/2 + h * 0.14);
-  }
-
+  // HP bar drawn outside (by caller)
+  ctx.imageSmoothingEnabled = true;
   ctx.restore();
+
+  // HP bar
+  const bw = e.size * 2;
+  drawHpBar(e.x, e.y - e.size - 6, bw, e.hp, e.maxHp, frozen ? '#22d3ee' : '#34d399');
 }
 
 function drawDefender(x, y, tableW, tableH, personR, color) {
-  const fw = tableW + 14;
-  const fh = personR * 2 + tableH + 20;
-  const fx = x - fw/2, fy = y - fh/2;
-  const bk = 6; // corner bracket arm length
-
-  // Subtle fill
-  ctx.fillStyle = color + '18';
-  ctx.fillRect(fx, fy, fw, fh);
-
-  // Frame outline
-  ctx.strokeStyle = color + 'BB';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(fx, fy, fw, fh);
-
-  // Corner brackets — Figma selection handles
-  const corners = [[fx, fy], [fx+fw, fy], [fx, fy+fh], [fx+fw, fy+fh]];
-  const dirs    = [[1,1],    [-1,1],       [1,-1],       [-1,-1]];
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2.5;
-  for (let i = 0; i < 4; i++) {
-    const [px, py] = corners[i], [dx, dy] = dirs[i];
-    ctx.beginPath();
-    ctx.moveTo(px + dx * bk, py);
-    ctx.lineTo(px, py);
-    ctx.lineTo(px, py + dy * bk);
-    ctx.stroke();
-  }
-
-  // Layer name label above frame (Figma shows it above selected frames)
+  ctx.save();
+  ctx.translate(Math.floor(x), Math.floor(y));
+  ctx.imageSmoothingEnabled = false;
+  const sc = 2;
+  // Pixel desk surface
+  const dw = tableW + 4, dh = tableH + 4;
+  ctx.fillStyle = '#8B6340';
+  ctx.fillRect(-dw/2 - 1, -dh/2 - 1, dw + 2, dh + 2);
+  ctx.fillStyle = '#A87850';
+  ctx.fillRect(-dw/2, -dh/2, dw, dh);
+  // Pixel person above desk
+  const personPal = ['', '#D4A870', color, '#F0C898', '#8B6040'];
+  pixelSprite(0, -(dh/2) - personR - 2, sc, PERSON_SP, personPal);
+  // Label
   ctx.fillStyle = color;
-  ctx.font = 'bold 7px Inter,monospace';
-  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-  ctx.fillText(tableW > 40 ? 'Design Mgr' : 'Designer', fx, fy - 2);
-  ctx.textBaseline = 'alphabetic';
+  ctx.font = 'bold 7px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(tableW > 40 ? 'D.MGR' : 'DSGN', 0, dh/2 + 11);
+  ctx.imageSmoothingEnabled = true;
+  ctx.restore();
 }
 
 function drawMapFurniture() {
-  // ── Player zone: designer desk facing staging area ──
+  ctx.imageSmoothingEnabled = false;
+
+  // ── Player desk — pixel art setup at left-center ──
   const dx = 120, dy = 280, dw = 140, dh = 48;
-  ctx.fillStyle = '#E8E8E4';
-  roundRect(dx - dw/2, dy - dh/2, dw, dh, 4); ctx.fill();
-  ctx.strokeStyle = '#C8C8C2'; ctx.lineWidth = 1;
-  roundRect(dx - dw/2, dy - dh/2, dw, dh, 4); ctx.stroke();
-
-  // Laptop base — centered on desk, screen opens UPWARD
-  const lbx = dx + 10, lby = dy + 4, lbw = 28, lbh = 16;
-  ctx.fillStyle = '#37352F';
-  roundRect(lbx - lbw/2, lby - lbh/2, lbw, lbh, 3); ctx.fill();
-  // Screen trapezoid opening UPWARD
-  ctx.fillStyle = '#191919';
-  ctx.beginPath();
-  ctx.moveTo(lbx - lbw/2 + 2, lby - lbh/2);
-  ctx.lineTo(lbx + lbw/2 - 2, lby - lbh/2);
-  ctx.lineTo(lbx + lbw/2 + 2, lby - lbh/2 - 22);
-  ctx.lineTo(lbx - lbw/2 - 2, lby - lbh/2 - 22);
-  ctx.closePath(); ctx.fill();
-  // Screen content — indigo glow
-  ctx.fillStyle = '#4F46E5'; ctx.globalAlpha = 0.55;
-  ctx.beginPath();
-  ctx.moveTo(lbx - lbw/2 + 5, lby - lbh/2 - 2);
-  ctx.lineTo(lbx + lbw/2 - 5, lby - lbh/2 - 2);
-  ctx.lineTo(lbx + lbw/2 - 1, lby - lbh/2 - 20);
-  ctx.lineTo(lbx - lbw/2 + 1, lby - lbh/2 - 20);
-  ctx.closePath(); ctx.fill();
+  // Desk surface
+  ctx.fillStyle = '#7A5530';
+  ctx.fillRect(dx - dw/2 - 2, dy - dh/2 + 2, dw + 4, dh + 2); // shadow
+  ctx.fillStyle = '#9A6A3A';
+  ctx.fillRect(dx - dw/2, dy - dh/2, dw, dh);
+  ctx.fillStyle = '#B07840';
+  ctx.fillRect(dx - dw/2, dy - dh/2, dw, 4); // front edge highlight
+  // Monitor
+  const mx = dx - 18, my = dy - dh/2;
+  ctx.fillStyle = '#222';
+  ctx.fillRect(mx - 16, my - 30, 32, 26); // bezel
+  ctx.fillStyle = '#4F46E5';
+  ctx.fillRect(mx - 13, my - 27, 26, 20); // screen
+  ctx.fillStyle = '#818cf8'; ctx.globalAlpha = 0.6;
+  ctx.fillRect(mx - 13, my - 27, 8, 5); // screen highlight
   ctx.globalAlpha = 1;
+  ctx.fillStyle = '#444';
+  ctx.fillRect(mx - 3, my - 4, 6, 4); // stand neck
+  ctx.fillRect(mx - 8, my, 16, 3); // stand base
+  // Keyboard
+  ctx.fillStyle = '#37352F';
+  ctx.fillRect(dx + 8, dy - 6, 34, 12); // keyboard body
+  ctx.fillStyle = '#4A4640';
+  for (let ki = 0; ki < 5; ki++) ctx.fillRect(dx + 10 + ki * 6, dy - 4, 5, 4); // key row 1
+  for (let ki = 0; ki < 5; ki++) ctx.fillRect(dx + 10 + ki * 6, dy + 2, 5, 4); // key row 2
+  // Coffee mug
+  ctx.fillStyle = '#E8E0D0';
+  ctx.fillRect(dx - 50, dy - 12, 12, 14);
+  ctx.fillStyle = '#C87040';
+  ctx.fillRect(dx - 50, dy - 12, 12, 4); // rim
+  ctx.fillStyle = '#6B4226';
+  ctx.fillRect(dx - 47, dy - 8, 6, 6); // coffee inside
+  // Books on left side
+  const bookColors = ['#C04030','#3060B0','#208050'];
+  for (let bi = 0; bi < 3; bi++) {
+    ctx.fillStyle = bookColors[bi];
+    ctx.fillRect(dx - dw/2 + 4 + bi * 8, dy - dh/2 - 18, 6, 18);
+  }
 
-  // ── Staging area: flat tables ──
+  // ── Staging tables — pixel art enemy desks ──
   const stagingTables = [
     { x: WALL_X + 90,  y: 120 },
     { x: WALL_X + 165, y: 340 },
@@ -1054,31 +1010,26 @@ function drawMapFurniture() {
   ];
   for (const t of stagingTables) {
     const tw = 80, th = 30;
-    ctx.fillStyle = 'rgba(200,200,195,0.7)';
-    roundRect(t.x - tw/2, t.y - th/2, tw, th, 3); ctx.fill();
-    ctx.strokeStyle = 'rgba(55,53,47,0.18)'; ctx.lineWidth = 1;
-    roundRect(t.x - tw/2, t.y - th/2, tw, th, 3); ctx.stroke();
-    // Laptop — keyboard base, screen opens UPWARD
-    const lw = 26, lh = 14;
-    ctx.fillStyle = '#37352F';
-    roundRect(t.x - lw/2, t.y - lh/2, lw, lh, 2); ctx.fill();
-    // Screen trapezoid opening upward
-    ctx.fillStyle = '#191919';
-    ctx.beginPath();
-    ctx.moveTo(t.x - lw/2 + 2, t.y - lh/2);
-    ctx.lineTo(t.x + lw/2 - 2, t.y - lh/2);
-    ctx.lineTo(t.x + lw/2 + 1, t.y - lh/2 - 20);
-    ctx.lineTo(t.x - lw/2 - 1, t.y - lh/2 - 20);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#4F46E5'; ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(t.x - lw/2 + 4, t.y - lh/2 - 2);
-    ctx.lineTo(t.x + lw/2 - 4, t.y - lh/2 - 2);
-    ctx.lineTo(t.x + lw/2 - 1, t.y - lh/2 - 18);
-    ctx.lineTo(t.x - lw/2 + 1, t.y - lh/2 - 18);
-    ctx.closePath(); ctx.fill();
+    // Desk shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillRect(t.x - tw/2 + 2, t.y - th/2 + 3, tw, th);
+    // Desk surface
+    ctx.fillStyle = '#6A5030';
+    ctx.fillRect(t.x - tw/2, t.y - th/2, tw, th);
+    ctx.fillStyle = '#8A6840';
+    ctx.fillRect(t.x - tw/2, t.y - th/2, tw, 4); // front edge
+    // Laptop on desk
+    const lw = 28, lh = 12;
+    ctx.fillStyle = '#2A2825';
+    ctx.fillRect(t.x - lw/2, t.y - lh/2, lw, lh); // base
+    ctx.fillStyle = '#1A1816';
+    ctx.fillRect(t.x - lw/2 + 2, t.y - lh/2 - 18, lw - 4, 18); // screen
+    ctx.fillStyle = '#4F46E5'; ctx.globalAlpha = 0.7;
+    ctx.fillRect(t.x - lw/2 + 4, t.y - lh/2 - 16, lw - 10, 13); // screen content
     ctx.globalAlpha = 1;
   }
+
+  ctx.imageSmoothingEnabled = true;
 }
 
 function drawHpBar(cx, y, w, hp, maxHp, color) {
@@ -1090,158 +1041,208 @@ function drawHpBar(cx, y, w, hp, maxHp, color) {
 
 // ─── Draw ─────────────────────────────────────────────────────────────────────
 function draw() {
-  // ── Background: backrooms yellow floor ──
-  ctx.fillStyle = '#C2A84E';
-  ctx.fillRect(0, 0, W, H);
-
-  // Floor tiles — barely-perceptible alternating tone
-  const TILE = 60;
+  // ── Background: pixel-art office floor ──
+  ctx.imageSmoothingEnabled = false;
+  const TILE = 32;
   for (let tx = 0; tx < W; tx += TILE) {
     for (let ty = 0; ty < H; ty += TILE) {
-      const light = ((Math.floor(tx / TILE) + Math.floor(ty / TILE)) % 2 === 0);
-      ctx.fillStyle = light ? 'rgba(255,240,180,0.05)' : 'rgba(0,0,0,0.04)';
+      const alt = ((Math.floor(tx / TILE) + Math.floor(ty / TILE)) % 2 === 0);
+      ctx.fillStyle = alt ? '#C8A87A' : '#B49060';
       ctx.fillRect(tx, ty, TILE, TILE);
     }
   }
-  // Worn seam lines
-  ctx.strokeStyle = '#A08C38'; ctx.lineWidth = 0.8;
-  for (let x = 0; x <= W; x += TILE) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-  for (let y = 0; y <= H; y += TILE) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  // Hard pixel grout lines
+  ctx.fillStyle = '#8A6030';
+  for (let x = 0; x <= W; x += TILE) ctx.fillRect(x, 0, 1, H);
+  for (let y = 0; y <= H; y += TILE) ctx.fillRect(0, y, W, 1);
 
-  // Player zone — warm overhead fluorescent wash
-  const lampGrad = ctx.createRadialGradient(WALL_X*0.45, H*0.5, 0, WALL_X*0.45, H*0.5, WALL_X * 0.75);
-  lampGrad.addColorStop(0, 'rgba(255,250,220,0.18)');
-  lampGrad.addColorStop(1, 'rgba(255,250,220,0)');
-  ctx.fillStyle = lampGrad; ctx.fillRect(0, 0, WALL_X, H);
-
-  // Staging zone — desaturated purple over the yellow
-  ctx.fillStyle = 'rgba(74,21,75,0.22)'; ctx.fillRect(WALL_X, 0, W - WALL_X, H);
+  // Staging zone tint
+  ctx.fillStyle = 'rgba(60,20,70,0.25)'; ctx.fillRect(WALL_X, 0, W - WALL_X, H);
+  ctx.imageSmoothingEnabled = true;
 
   // ── Map furniture (desks, laptops) ──
   drawMapFurniture();
 
-  // ── Office partition wall — solid paneled drywall with door opening ──
-  const wallW = 18, wallLeft = WALL_X - wallW / 2;
+  // ── Static pixel art environment dressing ──
+  ctx.imageSmoothingEnabled = false;
+  // Potted plant — top-left
+  ctx.fillStyle = '#5A3810'; ctx.fillRect(18, 12, 20, 16); // pot
+  ctx.fillStyle = '#6A4820'; ctx.fillRect(18, 12, 20, 4); // pot rim
+  ctx.fillStyle = '#2D6A2D'; ctx.fillRect(22, 2, 8, 12); // stem
+  ctx.fillStyle = '#3A8A3A'; ctx.fillRect(16, 4, 10, 8); ctx.fillRect(26, 4, 10, 8); // leaves
+  ctx.fillStyle = '#4AAA4A'; ctx.fillRect(20, 2, 12, 6); // top leaves
+  // Water cooler — bottom-left
+  ctx.fillStyle = '#C8D8E8'; ctx.fillRect(12, H - 66, 28, 48); // body
+  ctx.fillStyle = '#A0B8CC'; ctx.fillRect(12, H - 66, 28, 4); // top
+  ctx.fillStyle = '#5090C0'; ctx.fillRect(16, H - 60, 20, 24); // tank (blue water)
+  ctx.fillStyle = '#E0EAF0'; ctx.fillRect(16, H - 60, 20, 4); // tank top
+  ctx.fillStyle = '#C04040'; ctx.fillRect(16, H - 32, 8, 6); // hot tap
+  ctx.fillStyle = '#4070C0'; ctx.fillRect(24, H - 32, 8, 6); // cold tap
+  ctx.fillStyle = '#8A9AA8'; ctx.fillRect(14, H - 18, 24, 6); // legs platform
+  // Filing cabinet — mid-left
+  ctx.fillStyle = '#7A8090'; ctx.fillRect(8, 180, 32, 56); // body
+  ctx.fillStyle = '#909AA8'; ctx.fillRect(8, 180, 32, 4); // top
+  ctx.fillStyle = '#5A6070'; ctx.fillRect(8, 208, 32, 2); // drawer divider
+  ctx.fillStyle = '#B0B8C0'; ctx.fillRect(18, 192, 12, 4); // top handle
+  ctx.fillStyle = '#B0B8C0'; ctx.fillRect(18, 218, 12, 4); // bottom handle
+  ctx.imageSmoothingEnabled = true;
+
+  // ── Pixel-art cubicle divider wall with door ──
+  ctx.imageSmoothingEnabled = false;
+  const wallW = 16, wallLeft = WALL_X - wallW / 2;
   const doorH = 72, doorY = H / 2 - doorH / 2;
 
   function drawWallSegment(y1, y2) {
-    ctx.fillStyle = '#D4C8A0';
-    ctx.fillRect(wallLeft, y1, wallW, y2 - y1);
-    ctx.fillStyle = 'rgba(255,252,230,0.3)';
-    ctx.fillRect(wallLeft, y1, 2, y2 - y1);
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(wallLeft + wallW - 3, y1, 3, y2 - y1);
-    ctx.strokeStyle = 'rgba(0,0,0,0.10)'; ctx.lineWidth = 1; ctx.setLineDash([]);
-    for (let sy = 80; sy < y2; sy += 80) {
-      if (sy > y1) { ctx.beginPath(); ctx.moveTo(wallLeft, sy); ctx.lineTo(wallLeft + wallW, sy); ctx.stroke(); }
+    // Main panel
+    ctx.fillStyle = '#9A9088'; ctx.fillRect(wallLeft, y1, wallW, y2 - y1);
+    // Highlight left edge
+    ctx.fillStyle = '#B8B0A8'; ctx.fillRect(wallLeft, y1, 2, y2 - y1);
+    // Shadow right edge
+    ctx.fillStyle = '#6A6460'; ctx.fillRect(wallLeft + wallW - 2, y1, 2, y2 - y1);
+    // Horizontal rails every 40px
+    ctx.fillStyle = '#ADA8A0';
+    for (let sy = Math.ceil(y1 / 40) * 40; sy < y2; sy += 40) {
+      ctx.fillRect(wallLeft, sy, wallW, 2);
     }
-    ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(WALL_X, y1); ctx.lineTo(WALL_X, y2); ctx.stroke();
   }
   drawWallSegment(0, doorY);
   drawWallSegment(doorY + doorH, H);
 
-  // Door frame
-  const frameDepth = 4, frameW = wallW + frameDepth * 2;
-  ctx.fillStyle = '#6B5B3E';
-  ctx.fillRect(wallLeft - frameDepth, doorY - frameDepth, frameW, frameDepth);       // lintel
-  ctx.fillRect(wallLeft - frameDepth, doorY + doorH, frameW, frameDepth);             // sill
-  ctx.fillRect(wallLeft - frameDepth, doorY, frameDepth + 2, doorH);                  // left jamb
-  ctx.fillRect(wallLeft + wallW - 2, doorY, frameDepth + 2, doorH);                   // right jamb
-  // Door opening floor — faint threshold line
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(wallLeft - frameDepth, doorY + doorH); ctx.lineTo(wallLeft + wallW + frameDepth, doorY + doorH); ctx.stroke();
+  // Door frame — dark wood pixel trim
+  ctx.fillStyle = '#5A4020';
+  ctx.fillRect(wallLeft - 4, doorY - 4, wallW + 8, 4);   // lintel
+  ctx.fillRect(wallLeft - 4, doorY + doorH, wallW + 8, 4); // sill
+  ctx.fillRect(wallLeft - 4, doorY, 5, doorH);             // left jamb
+  ctx.fillRect(wallLeft + wallW - 1, doorY, 5, doorH);     // right jamb
 
-  // Staging badge — flat label
+  // Staging badge
   const bx = WALL_X + (W - WALL_X) / 2;
-  ctx.fillStyle = 'rgba(74,21,75,0.55)';
-  roundRect(bx - 30, 7, 60, 15, 4); ctx.fill();
-  ctx.strokeStyle = 'rgba(201,160,201,0.35)'; ctx.lineWidth = 1;
-  roundRect(bx - 30, 7, 60, 15, 4); ctx.stroke();
-  ctx.fillStyle = 'rgba(201,160,201,0.9)'; ctx.font = '9px Inter,monospace'; ctx.textAlign = 'center';
-  ctx.fillText('STAGING', bx, 18); ctx.textAlign = 'left';
+  ctx.fillStyle = '#3A1040';
+  ctx.fillRect(bx - 30, 7, 60, 15);
+  ctx.fillStyle = '#C890D0';
+  ctx.fillRect(bx - 28, 9, 56, 11);
+  ctx.fillStyle = '#3A1040';
+  ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('STAGING', bx, 15);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.imageSmoothingEnabled = true;
 
-  // ── Refill zones ──
+  // ── Refill zones — pixel art cross orb ──
+  ctx.imageSmoothingEnabled = false;
   for (const z of refillZones) {
     const pct = z.healLeft / z.totalHeal;
-    const r   = z.r;
-    ctx.shadowColor = '#34d399'; ctx.shadowBlur = 14 * pct;
-    ctx.fillStyle = `rgba(210,240,215,${0.18 + 0.1 * pct})`;
-    ctx.beginPath(); ctx.arc(z.x, z.y, r + 5, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#D4EDDA';
-    ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = '#52C77F'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(z.x, z.y, r + 2, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct); ctx.stroke();
-    ctx.font = `${r * 1.1}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('☕', z.x, z.y + 1);
-    ctx.fillStyle = '#34d399'; ctx.font = 'bold 8px Inter,monospace';
-    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
-    ctx.fillText('COFFEE', z.x, z.y + r + 13);
+    const r = z.r;
+    // Outer dashed bounding box (pixel art style)
+    ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+    ctx.strokeRect(z.x - r - 4, z.y - r - 4, (r + 4) * 2, (r + 4) * 2);
+    ctx.setLineDash([]);
+    // Dark backing square
+    ctx.fillStyle = 'rgba(8,30,18,0.85)';
+    ctx.fillRect(z.x - r, z.y - r, r * 2, r * 2);
+    // Pixel cross (green plus sign)
+    const arm = Math.floor(r * 0.5);
+    ctx.fillStyle = '#34d399';
+    ctx.fillRect(z.x - arm, z.y - r + 2, arm * 2, r * 2 - 4);  // vertical
+    ctx.fillRect(z.x - r + 2, z.y - arm, r * 2 - 4, arm * 2);  // horizontal
+    ctx.fillStyle = '#6ee7b7';
+    ctx.fillRect(z.x - arm + 2, z.y - arm + 2, (arm - 2) * 2, (arm - 2) * 2); // center highlight
+    // Pixel border
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+    ctx.strokeRect(z.x - r, z.y - r, r * 2, r * 2);
+    // Label
+    ctx.fillStyle = '#34d399'; ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('COFFEE', z.x, z.y + r + 11);
     ctx.textAlign = 'left';
   }
+  ctx.imageSmoothingEnabled = true;
 
-  // ── Boost items — glowing bubbles ──
+  // ── Boost items — pixel art pickup diamonds ──
+  ctx.imageSmoothingEnabled = false;
   const boostIcons  = { gun: '⚡', shield: '🛡', speed: '💨' };
   const boostShapes = { gun: '#F59E0B', shield: '#38BDF8', speed: '#4ADE80' };
   for (const item of boostItems) {
-    const bc  = boostShapes[item.type];
+    const bc = boostShapes[item.type];
     const pulse = 0.85 + 0.15 * Math.sin(drawTime * 0.004);
-    const br  = item.r * 1.6 * pulse;
+    const br = Math.floor(item.r * 1.4 * pulse);
     ctx.save();
-    ctx.translate(item.x, item.y);
-    // Outer halo
-    ctx.shadowColor = bc; ctx.shadowBlur = 28;
-    ctx.fillStyle = bc + '28';
-    ctx.beginPath(); ctx.arc(0, 0, br * 1.55, 0, Math.PI * 2); ctx.fill();
-    // Bubble fill
-    ctx.fillStyle = bc + '55';
-    ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.fill();
-    // Bubble border
-    ctx.strokeStyle = bc; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, 0, br, 0, Math.PI * 2); ctx.stroke();
-    ctx.shadowBlur = 0;
-    // Icon
-    ctx.font = `${item.r * 1.5}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(boostIcons[item.type], 0, 1);
+    ctx.translate(Math.floor(item.x), Math.floor(item.y));
+    // Dashed border square
+    ctx.strokeStyle = bc; ctx.lineWidth = 1; ctx.setLineDash([3,2]);
+    ctx.strokeRect(-br - 3, -br - 3, (br + 3) * 2, (br + 3) * 2);
+    ctx.setLineDash([]);
+    // Dark backing
+    ctx.fillStyle = 'rgba(8,8,22,0.88)';
+    ctx.fillRect(-br, -br, br * 2, br * 2);
+    // Colored border
+    ctx.strokeStyle = bc; ctx.lineWidth = 1;
+    ctx.strokeRect(-br, -br, br * 2, br * 2);
+    // White pixel ring highlight (corners)
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(-br, -br, 2, 2);
+    ctx.fillRect(br - 2, -br, 2, 2);
+    ctx.fillRect(-br, br - 2, 2, 2);
+    ctx.fillRect(br - 2, br - 2, 2, 2);
+    // Icon (emoji or sprite)
+    if (item.type === 'speed' && donutImg.complete && donutImg.naturalWidth > 0) {
+      ctx.imageSmoothingEnabled = true;
+      const ds = br * 1.8;
+      ctx.drawImage(donutImg, -ds / 2, -ds / 2, ds, ds);
+      ctx.imageSmoothingEnabled = false;
+    } else {
+      ctx.font = `${item.r * 1.3}px serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(boostIcons[item.type], 0, 1);
+    }
     // Label
-    ctx.fillStyle = bc; ctx.font = 'bold 8px Inter,monospace';
+    ctx.fillStyle = bc; ctx.font = 'bold 7px monospace';
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
-    ctx.fillText(BOOST_LABELS[item.type], 0, br + 13);
+    ctx.fillText(BOOST_LABELS[item.type], 0, br + 11);
     ctx.restore();
     ctx.textBaseline = 'alphabetic';
   }
+  ctx.imageSmoothingEnabled = true;
 
-  // ── Sick Day map items — flat pill tile ──
+  // ── Sick Day map items — pixel art pickup ──
+  ctx.imageSmoothingEnabled = false;
   for (const sd of sickDayMapItems) {
     const pct = sd.timeLeft / SICK_DAY_MAP_LIFETIME;
     ctx.save();
-    ctx.translate(sd.x, sd.y);
+    ctx.translate(Math.floor(sd.x), Math.floor(sd.y));
     ctx.globalAlpha = Math.min(1, pct * 3);
-    // Pill bg with glow
-    ctx.shadowColor = '#38BDF8'; ctx.shadowBlur = 14 * pct;
-    ctx.fillStyle = '#0C4A6E';
-    roundRect(-sd.r, -sd.r * 0.65, sd.r * 2, sd.r * 1.3, sd.r * 0.65); ctx.fill();
-    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1.5;
-    roundRect(-sd.r, -sd.r * 0.65, sd.r * 2, sd.r * 1.3, sd.r * 0.65); ctx.stroke();
-    ctx.shadowBlur = 0;
+    const br = sd.r;
+    // Dashed border
+    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1; ctx.setLineDash([3,2]);
+    ctx.strokeRect(-br - 3, -br - 3, (br + 3) * 2, (br + 3) * 2);
+    ctx.setLineDash([]);
+    // Dark backing
+    ctx.fillStyle = 'rgba(8,8,22,0.88)';
+    ctx.fillRect(-br, -br, br * 2, br * 2);
+    // Pixel border
+    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1;
+    ctx.strokeRect(-br, -br, br * 2, br * 2);
+    // Corner highlights
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillRect(-br, -br, 2, 2); ctx.fillRect(br-2, -br, 2, 2);
+    ctx.fillRect(-br, br-2, 2, 2); ctx.fillRect(br-2, br-2, 2, 2);
     // Icon
-    ctx.font = `${sd.r * 1.15}px serif`;
+    ctx.font = `${sd.r * 1.1}px serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('😷', 0, 1);
+    // Timer dashed outline progress
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 2;
+    ctx.setLineDash([Math.floor((br * 8 * pct)), 999]);
+    ctx.strokeRect(-br - 4, -br - 4, (br + 4) * 2, (br + 4) * 2);
+    ctx.setLineDash([]);
     // Label
-    ctx.fillStyle = '#7DD3FC'; ctx.font = 'bold 8px Inter,monospace';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('SICK DAY', 0, sd.r + 13);
-    // Timer arc
-    ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, sd.r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
-    ctx.stroke();
+    ctx.fillStyle = '#7DD3FC'; ctx.font = 'bold 7px monospace';
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center';
+    ctx.fillText('SICK DAY', 0, br + 11);
     ctx.restore();
     ctx.textBaseline = 'alphabetic';
   }
+  ctx.imageSmoothingEnabled = true;
 
   // ── Design Managers (barricades) ──
   for (const b of barricades) {
@@ -1267,12 +1268,13 @@ function draw() {
   const frozen = frozenTimer > 0;
   for (const e of enemies) { drawEnemy(e, frozen && e.released); }
 
-  // ── Bullets ──
-  ctx.fillStyle = '#fde68a'; ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 8;
+  // ── Bullets — pixel squares ──
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#FDE68A';
   for (const b of bullets) {
-    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+    ctx.fillRect(Math.floor(b.x - b.r), Math.floor(b.y - b.r), b.r * 2, b.r * 2);
   }
-  ctx.shadowBlur = 0;
+  ctx.imageSmoothingEnabled = true;
 
   // ── Player ──
   if (player) {
